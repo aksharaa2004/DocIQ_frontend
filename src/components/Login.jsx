@@ -1,59 +1,329 @@
-import { useState } from "react";
+import React, { useState } from "react";
+
+import "./Login.css";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleLogin = (e) => {
     e.preventDefault();
 
+    console.log("Login clicked");
     console.log("Email:", email);
     console.log("Password:", password);
-
-    // We will connect the login functionality later.
   };
 
   return (
-    <div className="login-container">
-      <div className="login-box">
-        <h1>DocIQ</h1>
-        <p>Welcome back! Please login to continue.</p>
+    <div className="login-page">
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              id="email"
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+      {/* ================= LEFT SIDE ================= */}
+
+      <div className="login-visual">
+
+        <div className="login-visual-content">
+
+          <a href="#home" className="login-brand">
+
+            <div className="login-brand-icon">
+              ✦
+            </div>
+
+            <span>DocIQ</span>
+
+          </a>
+
+
+          <div className="login-message">
+
+            <div className="login-small-badge">
+              AI-POWERED LEARNING
+            </div>
+
+            <h1>
+              Your documents.
+              <br />
+              <span>Your intelligence.</span>
+            </h1>
+
+            <p>
+              Turn complex documents into simple,
+              understandable knowledge with the power
+              of AI.
+            </p>
+
           </div>
 
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              id="password"
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+
+          {/* Mini AI Card */}
+
+          <div className="login-ai-card">
+
+            <div className="login-ai-header">
+
+              <div className="login-ai-logo">
+                ✦
+              </div>
+
+              <div>
+                <strong>DocIQ AI</strong>
+                <span>Document Assistant</span>
+              </div>
+
+              <div className="login-online">
+                <span></span>
+              </div>
+
+            </div>
+
+
+            <div className="login-document">
+
+              <div className="login-document-icon">
+                PDF
+              </div>
+
+              <div className="login-document-info">
+
+                <strong>
+                  Machine Learning Notes.pdf
+                </strong>
+
+                <span>
+                  24 pages • Ready to analyze
+                </span>
+
+              </div>
+
+            </div>
+
+
+            <div className="login-ai-result">
+
+              <div className="result-icon">
+                ✦
+              </div>
+
+              <div>
+                <strong>AI Summary</strong>
+                <span>
+                  Key concepts identified successfully
+                </span>
+              </div>
+
+              <div className="result-check">
+                ✓
+              </div>
+
+            </div>
+
           </div>
 
-          <button type="submit">Login</button>
-        </form>
+        </div>
 
-        <p className="signup-text">
-          Don't have an account? <span>Sign up</span>
-        </p>
+
+        <div className="login-decoration decoration-one"></div>
+        <div className="login-decoration decoration-two"></div>
+        <div className="login-decoration decoration-three"></div>
+
       </div>
+
+
+      {/* ================= RIGHT SIDE ================= */}
+
+      <div className="login-form-area">
+
+        <div className="login-form-container">
+
+          <a href="#home" className="mobile-login-brand">
+            <div className="login-brand-icon">
+              ✦
+            </div>
+            <span>DocIQ</span>
+          </a>
+
+
+          <div className="login-heading">
+
+            <div className="login-heading-icon">
+              ✦
+            </div>
+
+            <h2>
+              Welcome back
+            </h2>
+
+            <p>
+              Sign in to continue to your documents.
+            </p>
+
+          </div>
+
+
+          <form onSubmit={handleLogin}>
+
+            {/* Email */}
+
+            <div className="form-group">
+
+              <label htmlFor="email">
+                Email address
+              </label>
+
+              <div className="input-wrapper">
+
+                <span className="input-icon">
+                  @
+                </span>
+
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+
+              </div>
+
+            </div>
+
+
+            {/* Password */}
+
+            <div className="form-group">
+
+              <div className="password-label-row">
+
+                <label htmlFor="password">
+                  Password
+                </label>
+
+                <a href="#forgot-password">
+                  Forgot password?
+                </a>
+
+              </div>
+
+
+              <div className="input-wrapper">
+
+                <span className="input-icon">
+                  •••
+                </span>
+
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() =>
+                    setShowPassword(!showPassword)
+                  }
+                  aria-label="Toggle password visibility"
+                >
+                  {showPassword ? "Hide" : "Show"}
+                </button>
+
+              </div>
+
+            </div>
+
+
+            {/* Remember */}
+
+            <div className="remember-row">
+
+              <label className="remember-label">
+
+                <input type="checkbox" />
+
+                <span>
+                  Remember me
+                </span>
+
+              </label>
+
+            </div>
+
+
+            {/* Login */}
+
+            <button
+              type="submit"
+              className="login-submit-button"
+            >
+              <span>Sign In</span>
+              <span>→</span>
+            </button>
+
+          </form>
+
+
+          {/* Divider */}
+
+          <div className="login-divider">
+
+            <span></span>
+
+            <p>
+              or continue with
+            </p>
+
+            <span></span>
+
+          </div>
+
+
+          {/* Google */}
+
+          <button className="google-login-button">
+
+            <span className="google-icon">
+              G
+            </span>
+
+            Continue with Google
+
+          </button>
+
+
+          {/* Signup */}
+
+          <div className="signup-text">
+
+            <span>
+              Don't have an account?
+            </span>
+
+            <a href="#signup">
+              Create an account
+            </a>
+
+          </div>
+
+
+          {/* Back */}
+
+          <a href="#home" className="back-home">
+            ← Back to DocIQ
+            </a>
+
+        </div>
+
+      </div>
+
     </div>
   );
 }
 
 export default Login;
-
