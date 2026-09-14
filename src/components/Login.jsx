@@ -7,12 +7,45 @@ function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = (e) => {
+  const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogin = async (e) => {
     e.preventDefault();
 
-    console.log("Login clicked");
-    console.log("Email:", email);
-    console.log("Password:", password);
+    setMessage("");
+
+    try {
+      setIsLoading(true);
+
+      const response = await fetch("http://localhost:5000/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email,
+          password: password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setMessage(`Welcome, ${data.user.name}! Login successful.`);
+
+        setTimeout(() => {
+          window.location.hash = "dashboard";
+        }, 1500);
+      } else {
+        setMessage(data.message || "Invalid email or password.");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      setMessage("Unable to connect to the backend.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -25,15 +58,12 @@ function Login() {
         <div className="login-visual-content">
 
           <a href="#home" className="login-brand">
-
             <div className="login-brand-icon">
               ✦
             </div>
 
             <span>DocIQ</span>
-
           </a>
-
 
           <div className="login-message">
 
@@ -54,7 +84,6 @@ function Login() {
             </p>
 
           </div>
-
 
           {/* Mini AI Card */}
 
@@ -77,7 +106,6 @@ function Login() {
 
             </div>
 
-
             <div className="login-document">
 
               <div className="login-document-icon">
@@ -98,7 +126,6 @@ function Login() {
 
             </div>
 
-
             <div className="login-ai-result">
 
               <div className="result-icon">
@@ -107,6 +134,7 @@ function Login() {
 
               <div>
                 <strong>AI Summary</strong>
+
                 <span>
                   Key concepts identified successfully
                 </span>
@@ -122,13 +150,11 @@ function Login() {
 
         </div>
 
-
         <div className="login-decoration decoration-one"></div>
         <div className="login-decoration decoration-two"></div>
         <div className="login-decoration decoration-three"></div>
 
       </div>
-
 
       {/* ================= RIGHT SIDE ================= */}
 
@@ -137,12 +163,14 @@ function Login() {
         <div className="login-form-container">
 
           <a href="#home" className="mobile-login-brand">
+
             <div className="login-brand-icon">
               ✦
             </div>
-            <span>DocIQ</span>
-          </a>
 
+            <span>DocIQ</span>
+
+          </a>
 
           <div className="login-heading">
 
@@ -159,7 +187,6 @@ function Login() {
             </p>
 
           </div>
-
 
           <form onSubmit={handleLogin}>
 
@@ -190,7 +217,6 @@ function Login() {
 
             </div>
 
-
             {/* Password */}
 
             <div className="form-group">
@@ -206,7 +232,6 @@ function Login() {
                 </a>
 
               </div>
-
 
               <div className="input-wrapper">
 
@@ -238,7 +263,6 @@ function Login() {
 
             </div>
 
-
             {/* Remember */}
 
             <div className="remember-row">
@@ -255,19 +279,32 @@ function Login() {
 
             </div>
 
+            {/* Login Message */}
 
-            {/* Login */}
+            {message && (
+              <p
+                className="login-message-status"
+                role="alert"
+              >
+                {message}
+              </p>
+            )}
+
+            {/* Login Button */}
 
             <button
               type="submit"
               className="login-submit-button"
+              disabled={isLoading}
             >
-              <span>Sign In</span>
+              <span>
+                {isLoading ? "Signing in..." : "Sign In"}
+              </span>
+
               <span>→</span>
             </button>
 
           </form>
-
 
           {/* Divider */}
 
@@ -283,19 +320,18 @@ function Login() {
 
           </div>
 
-
           {/* Google */}
 
-          <button className="google-login-button">
-
+          <button
+            className="google-login-button"
+            type="button"
+          >
             <span className="google-icon">
               G
             </span>
 
             Continue with Google
-
           </button>
-
 
           {/* Signup */}
 
@@ -311,12 +347,11 @@ function Login() {
 
           </div>
 
-
           {/* Back */}
 
           <a href="#home" className="back-home">
             ← Back to DocIQ
-            </a>
+          </a>
 
         </div>
 

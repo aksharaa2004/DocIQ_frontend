@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
+
 import Home from "./components/Home";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
+import Dashboard from "./components/Dashboard";
 
 function App() {
   const getCurrentPage = () => {
@@ -13,6 +15,10 @@ function App() {
 
     if (hash === "#signup") {
       return "signup";
+    }
+
+    if (hash === "#dashboard") {
+      return "dashboard";
     }
 
     return "home";
@@ -35,8 +41,12 @@ function App() {
   return (
     <div>
       {page === "home" && <Home />}
+
       {page === "login" && <Login />}
+
       {page === "signup" && <Signup />}
+
+      {page === "dashboard" && <Dashboard />}
     </div>
   );
 }
