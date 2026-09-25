@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-
 import "./Login.css";
 
 function Login() {
@@ -32,6 +31,8 @@ function Login() {
       const data = await response.json();
 
       if (response.ok) {
+        localStorage.setItem("userName", data.user.name);
+
         setMessage(`Welcome, ${data.user.name}! Login successful.`);
 
         setTimeout(() => {
@@ -362,3 +363,4 @@ function Login() {
 }
 
 export default Login;
+

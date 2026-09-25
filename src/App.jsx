@@ -4,6 +4,7 @@ import Home from "./components/Home";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
 import Dashboard from "./components/Dashboard";
+import Upload from "./components/Upload";
 
 function App() {
   const getCurrentPage = () => {
@@ -19,6 +20,10 @@ function App() {
 
     if (hash === "#dashboard") {
       return "dashboard";
+    }
+
+    if (hash === "#upload") {
+      return "upload";
     }
 
     return "home";
@@ -47,6 +52,8 @@ function App() {
       {page === "signup" && <Signup />}
 
       {page === "dashboard" && <Dashboard />}
+
+      {page === "upload" && <Upload />}
     </div>
   );
 }
