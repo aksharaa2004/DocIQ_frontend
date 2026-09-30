@@ -86,6 +86,30 @@
   background: #fffaf5;
 }
 
+/* Study Hub */
+
+.dashboard-menu-item.study-hub-item {
+  position: relative;
+}
+
+.dashboard-menu-item.study-hub-item::after {
+  content: "NEW";
+  margin-left: auto;
+  padding: 3px 6px;
+  border-radius: 5px;
+  background: #f28c68;
+  color: white;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.dashboard-menu-item.study-hub-item:hover::after,
+.dashboard-menu-item.study-hub-item.active::after {
+  background: #f28c68;
+  color: white;
+}
+
 .dashboard-sidebar-bottom {
   margin-top: auto;
 }
@@ -532,6 +556,18 @@
 .translate-action {
   background: #f7edf6;
   color: #8c568c;
+}
+
+/* Interactive Study Mode */
+
+.study-action {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.study-action:hover {
+  border-color: #86efac;
+  background: #dcfce7;
 }
 
 .quick-action-item > span:nth-child(2) {

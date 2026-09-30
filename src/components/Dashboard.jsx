@@ -13,45 +13,85 @@ function Dashboard() {
     }
   });
 
+  // Navigate using the existing hash-based routing
+  const navigateTo = (path) => {
+    window.location.hash = path;
+  };
+
+  // Logout
   const handleLogout = () => {
     localStorage.removeItem("userName");
     localStorage.removeItem("token");
-    window.location.hash = "home";
+    navigateTo("home");
   };
 
   // Dynamic statistics
   const totalDocuments = recentFiles.length;
 
-  const thisWeekCount = recentFiles.filter((file) => {
-    const uploadDate = new Date(file.date || Date.now());
-    const now = new Date();
-    const diffDays = Math.floor((now - uploadDate) / (1000 * 60 * 60 * 24));
-    return diffDays <= 7;
-  }).length;
+  // Count saved/bookmarked documents
+  const savedBookmarks = recentFiles.filter(
+    (file) => file.bookmarked === true || file.isBookmarked === true
+  ).length;
 
-  const totalStorage = recentFiles.reduce((sum, file) => sum + (file.size || 0), 0);
+  // Total document storage
+  const totalStorage = recentFiles.reduce(
+    (sum, file) => sum + (Number(file.size) || 0),
+    0
+  );
 
+  // Format file size
   const formatFileSize = (bytes) => {
     if (!bytes) return "0 MB";
+
     const mb = bytes / (1024 * 1024);
-    return mb < 0.01 ? `${(bytes / 1024).toFixed(1)} KB` : `${mb.toFixed(1)} MB`;
+
+    if (mb < 0.01) {
+      return `${(bytes / 1024).toFixed(1)} KB`;
+    }
+
+    return `${mb.toFixed(1)} MB`;
   };
 
+  // Format upload date
   const formatDate = (date) => {
     if (!date) return "Uploaded today";
+
     const uploadDate = new Date(date);
+
+    if (Number.isNaN(uploadDate.getTime())) {
+      return "Uploaded today";
+    }
+
     const now = new Date();
-    const diff = Math.floor((now - uploadDate) / (1000 * 60 * 60 * 24));
-    if (diff === 0) return "Uploaded today";
+
+    const diff = Math.floor(
+      (now - uploadDate) / (1000 * 60 * 60 * 24)
+    );
+
+    if (diff <= 0) return "Uploaded today";
     if (diff === 1) return "Uploaded yesterday";
+
     return `Uploaded ${diff} days ago`;
   };
 
+  // File icon based on extension
   const getFileIcon = (fileName = "") => {
     const ext = fileName.split(".").pop().toLowerCase();
+
     if (ext === "pdf") return "▤";
     if (ext === "doc" || ext === "docx") return "▥";
+    if (ext === "ppt" || ext === "pptx") return "▧";
+
     return "▧";
+  };
+
+  // Open the first document for AI-related actions
+  const openFirstDocument = () => {
+    if (recentFiles.length > 0) {
+      navigateTo(`reader/${recentFiles[0].id}`);
+    } else {
+      navigateTo("upload");
+    }
   };
 
   return (
@@ -72,32 +112,60 @@ function Dashboard() {
 
         <nav className="dashboard-menu">
 
-          <a href="#dashboard" className="dashboard-menu-item active">
+          {/* Dashboard */}
+          <a
+            href="#dashboard"
+            className="dashboard-menu-item active"
+          >
             <span>▦</span>
             Dashboard
           </a>
 
-          <a href="#documents" className="dashboard-menu-item">
-            <span>▤</span>
-            My Documents
-          </a>
+          {/* Documents */}
+         <a href="#documents" className="dashboard-menu-item">
+              <span>▤</span>
+              My Documents
+        </a>
 
-          <a href="#upload" className="dashboard-menu-item">
+          {/* Upload */}
+          <a
+            href="#upload"
+            className="dashboard-menu-item"
+          >
             <span>↑</span>
             Upload Document
           </a>
 
-          <a href="#assistant" className="dashboard-menu-item">
+          {/* NEW: Study Hub */}
+          <a
+            href="#study"
+            className="dashboard-menu-item"
+          >
+            <span>▣</span>
+            Study Hub
+          </a>
+
+          {/* AI Assistant */}
+          <a
+            href="#assistant"
+            className="dashboard-menu-item"
+          >
             <span>✦</span>
             AI Assistant
           </a>
 
-          <a href="#settings" className="dashboard-menu-item">
+          {/* Settings */}
+          <a
+            href="#settings"
+            className="dashboard-menu-item"
+          >
             <span>⚙</span>
             Settings
           </a>
 
         </nav>
+
+        {/* ================= SIDEBAR BOTTOM ================= */}
 
         <div className="dashboard-sidebar-bottom">
 
@@ -115,7 +183,10 @@ function Dashboard() {
               Explore DocIQ and learn smarter.
             </p>
 
-            <button type="button" onClick={() => { window.location.hash = "upload"; }}>
+            <button
+              type="button"
+              onClick={() => navigateTo("upload")}
+            >
               Learn more →
             </button>
 
@@ -207,6 +278,8 @@ function Dashboard() {
 
         <section className="dashboard-statistics">
 
+          {/* Total Documents */}
+
           <div className="dashboard-stat-card purple-stat">
 
             <div className="dashboard-stat-icon">
@@ -230,6 +303,8 @@ function Dashboard() {
             </div>
 
           </div>
+
+          {/* AI Summaries */}
 
           <div className="dashboard-stat-card blue-stat">
 
@@ -255,29 +330,33 @@ function Dashboard() {
 
           </div>
 
+          {/* NEW: Saved Bookmarks */}
+
           <div className="dashboard-stat-card green-stat">
 
             <div className="dashboard-stat-icon">
-              ◷
+              🔖
             </div>
 
             <div>
 
               <span>
-                This Week
+                Saved Bookmarks
               </span>
 
               <h2>
-                {thisWeekCount}
+                {savedBookmarks}
               </h2>
 
               <p>
-                Documents processed
+                Important sections saved
               </p>
 
             </div>
 
           </div>
+
+          {/* Storage */}
 
           <div className="dashboard-stat-card orange-stat">
 
@@ -309,7 +388,7 @@ function Dashboard() {
 
         <section className="dashboard-content-grid">
 
-          {/* Recent Documents */}
+          {/* ================= RECENT DOCUMENTS ================= */}
 
           <div className="dashboard-panel recent-documents-panel">
 
@@ -327,13 +406,19 @@ function Dashboard() {
 
               </div>
 
-              <button type="button" onClick={() => { window.location.hash = "upload"; }}>
+              <button
+                type="button"
+                onClick={() => navigateTo("documents")}
+              >
                 View all →
               </button>
 
             </div>
 
             {recentFiles.length === 0 ? (
+
+              /* Empty State */
+
               <div className="dashboard-empty-state">
 
                 <div className="dashboard-empty-icon">
@@ -352,17 +437,29 @@ function Dashboard() {
                 <button
                   className="dashboard-primary-button"
                   type="button"
-                  onClick={() => {
-                    window.location.hash = "upload";
-                  }}
+                  onClick={() => navigateTo("upload")}
                 >
                   ↑ Upload your first document
                 </button>
 
               </div>
+
             ) : (
-              <div className="dashboard-recent-list" style={{ marginTop: "16px", display: "flex", flexDirection: "column", gap: "12px" }}>
+
+              /* Recent Documents List */
+
+              <div
+                className="dashboard-recent-list"
+                style={{
+                  marginTop: "16px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "12px"
+                }}
+              >
+
                 {recentFiles.map((file) => (
+
                   <div
                     key={file.id}
                     style={{
@@ -375,7 +472,17 @@ function Dashboard() {
                       background: "#ffffff"
                     }}
                   >
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px"
+                      }}
+                    >
+
+                      {/* File Icon */}
+
                       <div
                         style={{
                           width: "36px",
@@ -391,42 +498,90 @@ function Dashboard() {
                       >
                         {getFileIcon(file.name)}
                       </div>
+
+                      {/* File Information */}
+
                       <div>
-                        <strong style={{ display: "block", fontSize: "14px", color: "#1e293b" }}>
+
+                        <strong
+                          style={{
+                            display: "block",
+                            fontSize: "14px",
+                            color: "#1e293b"
+                          }}
+                        >
                           {file.name}
                         </strong>
-                        <span style={{ fontSize: "12px", color: "#64748b" }}>
-                          {file.type || "FILE"} • {formatFileSize(file.size)} • {formatDate(file.date)}
+
+                        <span
+                          style={{
+                            fontSize: "12px",
+                            color: "#64748b"
+                          }}
+                        >
+                          {file.type || "FILE"} •{" "}
+                          {formatFileSize(file.size)} •{" "}
+                          {formatDate(file.date)}
                         </span>
+
                       </div>
+
                     </div>
 
-                    <button
-                      type="button"
+                    {/* Bookmark + View */}
+
+                    <div
                       style={{
-                        background: "#eff6ff",
-                        color: "#2563eb",
-                        border: "none",
-                        padding: "6px 14px",
-                        borderRadius: "6px",
-                        cursor: "pointer",
-                        fontWeight: "600",
-                        fontSize: "13px"
-                      }}
-                      onClick={() => {
-                        window.location.hash = `reader/${file.id}`;
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px"
                       }}
                     >
-                      View
-                    </button>
+
+                      {(file.bookmarked === true ||
+                        file.isBookmarked === true) && (
+                        <span
+                          title="Bookmarked"
+                          style={{
+                            fontSize: "16px"
+                          }}
+                        >
+                          🔖
+                        </span>
+                      )}
+
+                      <button
+                        type="button"
+                        style={{
+                          background: "#eff6ff",
+                          color: "#2563eb",
+                          border: "none",
+                          padding: "6px 14px",
+                          borderRadius: "6px",
+                          cursor: "pointer",
+                          fontWeight: "600",
+                          fontSize: "13px"
+                        }}
+                        onClick={() => {
+                          navigateTo(`reader/${file.id}`);
+                        }}
+                      >
+                        View
+                      </button>
+
+                    </div>
+
                   </div>
+
                 ))}
+
               </div>
+
             )}
 
           </div>
 
-          {/* Quick Actions */}
+          {/* ================= QUICK ACTIONS ================= */}
 
           <div className="dashboard-panel quick-actions-panel">
 
@@ -448,12 +603,12 @@ function Dashboard() {
 
             <div className="dashboard-quick-actions">
 
+              {/* Upload */}
+
               <button
                 className="quick-action-item"
                 type="button"
-                onClick={() => {
-                  window.location.hash = "upload";
-                }}
+                onClick={() => navigateTo("upload")}
               >
 
                 <span className="quick-action-icon upload-action">
@@ -478,16 +633,12 @@ function Dashboard() {
 
               </button>
 
+              {/* AI Summarization */}
+
               <button
                 className="quick-action-item"
                 type="button"
-                onClick={() => {
-                  if (recentFiles.length > 0) {
-                    window.location.hash = `reader/${recentFiles[0].id}`;
-                  } else {
-                    window.location.hash = "upload";
-                  }
-                }}
+                onClick={openFirstDocument}
               >
 
                 <span className="quick-action-icon summary-action">
@@ -512,16 +663,12 @@ function Dashboard() {
 
               </button>
 
+              {/* Ask AI */}
+
               <button
                 className="quick-action-item"
                 type="button"
-                onClick={() => {
-                  if (recentFiles.length > 0) {
-                    window.location.hash = `reader/${recentFiles[0].id}`;
-                  } else {
-                    window.location.hash = "upload";
-                  }
-                }}
+                onClick={openFirstDocument}
               >
 
                 <span className="quick-action-icon question-action">
@@ -546,16 +693,12 @@ function Dashboard() {
 
               </button>
 
+              {/* Translate */}
+
               <button
                 className="quick-action-item"
                 type="button"
-                onClick={() => {
-                  if (recentFiles.length > 0) {
-                    window.location.hash = `reader/${recentFiles[0].id}`;
-                  } else {
-                    window.location.hash = "upload";
-                  }
-                }}
+                onClick={openFirstDocument}
               >
 
                 <span className="quick-action-icon translate-action">
@@ -570,6 +713,36 @@ function Dashboard() {
 
                   <small>
                     Read content in your language
+                  </small>
+
+                </span>
+
+                <b>
+                  →
+                </b>
+
+              </button>
+
+              {/* NEW: Interactive Study Mode */}
+
+              <button
+                className="quick-action-item"
+                type="button"
+                onClick={() => navigateTo("study")}
+              >
+
+                <span className="quick-action-icon study-action">
+                  ✓
+                </span>
+
+                <span>
+
+                  <strong>
+                    Interactive Study Mode
+                  </strong>
+
+                  <small>
+                    MCQs, flashcards & practice tests
                   </small>
 
                 </span>
@@ -607,7 +780,10 @@ function Dashboard() {
 
           </div>
 
-          <button type="button" onClick={() => { window.location.hash = "upload"; }}>
+          <button
+            type="button"
+            onClick={() => navigateTo("upload")}
+          >
             Get started →
           </button>
 

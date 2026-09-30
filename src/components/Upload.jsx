@@ -1,98 +1,77 @@
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import "./Upload.css";
+
+const API_BASE_URL = "http://localhost:5000";
 
 function Upload() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [dragActive, setDragActive] = useState(false);
-  const [message, setMessage] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("");
 
-  const [recentFiles, setRecentFiles] = useState(() => {
+  const [recentDocuments, setRecentDocuments] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem("recentDocuments")) || [];
+      return (
+        JSON.parse(
+          localStorage.getItem("recentDocuments")
+        ) || []
+      );
     } catch {
       return [];
     }
   });
 
-  const fileInputRef = useRef(null);
+  const userName =
+    localStorage.getItem("userName") || "Student";
 
-  const userName = localStorage.getItem("userName") || "Student";
+  const allowedExtensions = [
+    ".pdf",
+    ".docx",
+    ".pptx",
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".txt",
+  ];
 
-  const saveRecentFiles = (files) => {
-    setRecentFiles(files);
-    localStorage.setItem("recentDocuments", JSON.stringify(files));
+  const maxFileSize = 50 * 1024 * 1024;
+
+  const showMessage = (text, type = "error") => {
+    setMessage(text);
+    setMessageType(type);
+  };
+
+  const clearMessage = () => {
+    setMessage("");
+    setMessageType("");
   };
 
   const handleLogout = () => {
     localStorage.removeItem("userName");
+    localStorage.removeItem("token");
     window.location.hash = "home";
   };
 
-  const handleFile = (file) => {
-    if (!file) return;
+  const getFileExtension = (fileName) => {
+    if (!fileName) return "";
 
-    const allowedExtensions = [".pdf", ".doc", ".docx", ".txt"];
-    const fileName = file.name.toLowerCase();
-
-    const validFile = allowedExtensions.some((extension) =>
-      fileName.endsWith(extension)
-    );
-
-    if (!validFile) {
-      setSelectedFile(null);
-      setMessage("Please upload a PDF, DOC, DOCX, or TXT file.");
-      return;
-    }
-
-    if (file.size > 10 * 1024 * 1024) {
-      setSelectedFile(null);
-      setMessage("File size must be less than 10 MB.");
-      return;
-    }
-
-    setSelectedFile(file);
-    setMessage("");
-  };
-
-  const handleFileChange = (event) => {
-    handleFile(event.target.files[0]);
-  };
-
-  const handleDragOver = (event) => {
-    event.preventDefault();
-    setDragActive(true);
-  };
-
-  const handleDragLeave = (event) => {
-    event.preventDefault();
-    setDragActive(false);
-  };
-
-  const handleDrop = (event) => {
-    event.preventDefault();
-    setDragActive(false);
-
-    const file = event.dataTransfer.files[0];
-    handleFile(file);
-  };
-
-  const removeFile = () => {
-    setSelectedFile(null);
-    setMessage("");
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    return `.${fileName
+      .split(".")
+      .pop()
+      .toLowerCase()}`;
   };
 
   const getFileType = (fileName) => {
-    const extension = fileName.split(".").pop().toLowerCase();
+    const extension =
+      getFileExtension(fileName);
 
-    if (extension === "pdf") return "PDF";
-    if (extension === "doc") return "DOC";
-    if (extension === "docx") return "DOCX";
-    if (extension === "txt") return "TXT";
+    if (extension === ".pdf") return "PDF";
+    if (extension === ".doc") return "DOC";
+    if (extension === ".docx") return "DOCX";
+    if (extension === ".pptx") return "PPTX";
+    if ([".png", ".jpg", ".jpeg"].includes(extension)) return "IMAGE";
+    if (extension === ".txt") return "TXT";
 
     return "FILE";
   };
@@ -101,159 +80,386 @@ function Upload() {
     const type = getFileType(fileName);
 
     if (type === "PDF") return "▤";
-    if (type === "DOC" || type === "DOCX") return "▥";
-    return "▧";
+    if (type === "DOC") return "▥";
+    if (type === "DOCX") return "▥";
+    if (type === "TXT") return "▱";
+
+    return "▱";
+  };
+
+  const getRecentIconClass = (fileName) => {
+    const extension =
+      getFileExtension(fileName);
+
+    if (extension === ".pdf") return "pdf";
+    if (
+      extension === ".doc" ||
+      extension === ".docx" ||
+      extension === ".pptx" ||
+      [".png", ".jpg", ".jpeg"].includes(extension)
+    ) {
+      return "doc";
+    }
+
+    if (extension === ".txt") return "txt";
+
+    return "file";
   };
 
   const formatFileSize = (bytes) => {
-    if (!bytes) return "0 MB";
+    if (!bytes) return "0 KB";
 
-    const mb = bytes / (1024 * 1024);
+    const mb =
+      bytes / (1024 * 1024);
 
-    if (mb < 0.01) {
-      return `${(bytes / 1024).toFixed(1)} KB`;
+    if (mb < 1) {
+      return `${Math.max(
+        1,
+        Math.round(bytes / 1024)
+      )} KB`;
     }
 
     return `${mb.toFixed(1)} MB`;
   };
 
   const formatDate = (date) => {
+    if (!date) {
+      return "Recently";
+    }
+
     const uploadDate = new Date(date);
+
+    if (
+      Number.isNaN(
+        uploadDate.getTime()
+      )
+    ) {
+      return "Recently";
+    }
+
     const now = new Date();
 
-    const difference =
-      Math.floor((now - uploadDate) / (1000 * 60 * 60 * 24));
+    const difference = Math.floor(
+      (now - uploadDate) /
+        (1000 * 60 * 60 * 24)
+    );
 
-    if (difference === 0) return "Uploaded today";
-    if (difference === 1) return "Uploaded yesterday";
+    if (difference === 0) {
+      return "Today";
+    }
 
-    return `Uploaded ${difference} days ago`;
+    if (difference === 1) {
+      return "Yesterday";
+    }
+
+    if (
+      difference > 1 &&
+      difference < 7
+    ) {
+      return `${difference} days ago`;
+    }
+
+    return uploadDate.toLocaleDateString();
   };
 
-  const handleUpload = async () => {
-    if (!selectedFile) {
-      setMessage("Please select a document first.");
+  const validateFile = (file) => {
+    if (!file) {
+      showMessage(
+        "Please select a document first.",
+        "error"
+      );
+      return false;
+    }
+
+    const extension =
+      getFileExtension(file.name);
+
+    if (
+      !allowedExtensions.includes(
+        extension
+      )
+    ) {
+      showMessage(
+        "Unsupported file type. Please upload PDF, DOCX, PPTX, or TXT files. Older DOC/PPT files must be saved in the newer format first.",
+        "error"
+      );
+      return false;
+    }
+
+    if (file.size > maxFileSize) {
+      showMessage(
+        "File is too large. Maximum file size is 50 MB.",
+        "error"
+      );
+      return false;
+    }
+
+    return true;
+  };
+
+  const selectFile = (file) => {
+    clearMessage();
+
+    if (!file) {
       return;
     }
 
-    setUploading(true);
-    setMessage("");
+    if (!validateFile(file)) {
+      setSelectedFile(null);
+      return;
+    }
+
+    setSelectedFile(file);
+  };
+
+  const handleFileChange = (event) => {
+    const file =
+      event.target.files?.[0];
+
+    selectFile(file);
+
+    event.target.value = "";
+  };
+
+  const handleDragOver = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    setDragActive(true);
+  };
+
+  const handleDragLeave = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    setDragActive(false);
+  };
+
+  const handleDrop = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    setDragActive(false);
+
+    const file =
+      event.dataTransfer.files?.[0];
+
+    selectFile(file);
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    clearMessage();
+  };
+
+  const handleUpload = async () => {
+    if (!validateFile(selectedFile)) {
+      return;
+    }
 
     try {
+      setUploading(true);
+      clearMessage();
+
       const formData = new FormData();
-      formData.append("document", selectedFile);
 
-      const response = await fetch("http://localhost:5000/api/upload", {
-        method: "POST",
-        body: formData,
-      });
+      formData.append(
+        "document",
+        selectedFile
+      );
 
-      const data = await response.json();
+      const response = await fetch(
+        `${API_BASE_URL}/api/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      let data = {};
+
+      try {
+        data = await response.json();
+      } catch {
+        throw new Error(
+          "The server returned an invalid response."
+        );
+      }
 
       if (!response.ok) {
-        throw new Error(data.message || "Upload failed.");
+        throw new Error(
+          data.message ||
+            "Upload failed."
+        );
       }
 
-      // Save using the real MongoDB documentId returned from backend
       const newDocument = {
         id: data.documentId,
-        name: selectedFile.name,
-        size: selectedFile.size,
-        type: getFileType(selectedFile.name),
+        name:
+          data.file?.originalName ||
+          selectedFile.name,
+        size:
+          data.file?.size ||
+          selectedFile.size,
+        type:
+          data.file?.type ||
+          getFileType(
+            selectedFile.name
+          ),
         date: new Date().toISOString(),
+        status: "processing",
       };
 
-      const updatedFiles = [
+      const updatedDocuments = [
         newDocument,
-        ...recentFiles,
+        ...recentDocuments.filter(
+          (document) =>
+            document.id !==
+            newDocument.id
+        ),
       ].slice(0, 5);
 
-      saveRecentFiles(updatedFiles);
+      setRecentDocuments(
+        updatedDocuments
+      );
 
-      setMessage("Document uploaded successfully!");
+      localStorage.setItem(
+        "recentDocuments",
+        JSON.stringify(
+          updatedDocuments
+        )
+      );
+
+      showMessage(
+        "Document uploaded successfully. Processing started.",
+        "success"
+      );
+
       setSelectedFile(null);
 
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-
-      // Automatically route to the processing animation screen (Screen 6)
-      window.location.hash = `processing/${data.documentId}`;
-
+      /*
+       * Wait briefly so the success message
+       * can be seen before moving to processing.
+       */
+      setTimeout(() => {
+        window.location.hash =
+          `processing/${data.documentId}`;
+      }, 700);
     } catch (error) {
-      setMessage(error.message || "Something went wrong.");
+      console.error(
+        "Upload error:",
+        error
+      );
+
+      showMessage(
+        error.message ||
+          "Unable to upload the document. Please try again.",
+        "error"
+      );
     } finally {
       setUploading(false);
     }
   };
 
-  const totalStorage = recentFiles.reduce(
-    (total, file) => total + (file.size || 0),
-    0
-  );
+  const handleViewRecent = (documentId) => {
+    if (!documentId) {
+      showMessage(
+        "This document does not have a valid ID.",
+        "error"
+      );
+      return;
+    }
 
-  const thisWeekCount = recentFiles.filter((file) => {
-    const uploadDate = new Date(file.date);
-    const now = new Date();
-
-    const difference =
-      (now - uploadDate) / (1000 * 60 * 60 * 24);
-
-    return difference <= 7;
-  }).length;
+    window.location.hash =
+      `reader/${documentId}`;
+  };
 
   return (
     <div className="upload-page">
 
-      {/* ================= SIDEBAR ================= */}
+      {/* SIDEBAR */}
+      <aside className="dashboard-sidebar">
 
-      <aside className="upload-sidebar">
+        <a
+          href="#dashboard"
+          className="dashboard-logo"
+        >
+          <span className="dashboard-logo-icon">
+            ✦
+          </span>
 
-        <a href="#dashboard" className="upload-logo">
-          <span className="upload-logo-box">✦</span>
-          <span>DocIQ</span>
+          <span>
+            DocIQ
+          </span>
         </a>
 
-        <div className="upload-menu-label">
+        <div className="dashboard-menu-title">
           MAIN MENU
         </div>
 
-        <nav className="upload-nav">
+        <nav className="dashboard-menu">
 
-          <a href="#dashboard" className="upload-nav-item">
-            <span className="nav-icon">▦</span>
+          <a
+            href="#dashboard"
+            className="dashboard-menu-item"
+          >
+            <span>▦</span>
             Dashboard
           </a>
 
-          <a href="#documents" className="upload-nav-item">
-            <span className="nav-icon">▤</span>
+          <a
+            href="#documents"
+            className="dashboard-menu-item"
+          >
+            <span>▤</span>
             My Documents
           </a>
 
-          <a href="#upload" className="upload-nav-item active">
-            <span className="nav-icon">↑</span>
+          <a
+            href="#upload"
+            className="dashboard-menu-item active"
+          >
+            <span>↑</span>
             Upload Document
           </a>
 
-          <a href="#assistant" className="upload-nav-item">
-            <span className="nav-icon">✦</span>
+          <a
+            href="#study"
+            className="dashboard-menu-item"
+          >
+            <span>🎓</span>
+            Study Hub
+          </a>
+
+          <a
+            href="#assistant"
+            className="dashboard-menu-item"
+          >
+            <span>✦</span>
             AI Assistant
           </a>
 
-          <a href="#settings" className="upload-nav-item">
-            <span className="nav-icon">⚙</span>
+          <a
+            href="#settings"
+            className="dashboard-menu-item"
+          >
+            <span>⚙</span>
             Settings
           </a>
 
         </nav>
 
-        <div className="upload-sidebar-bottom">
+        <div className="dashboard-sidebar-bottom">
 
-          <div className="upload-help">
+          <div className="dashboard-help-card">
 
-            <div className="help-icon">?</div>
+            <div className="dashboard-help-icon">
+              ?
+            </div>
 
-            <strong>Need help?</strong>
+            <strong>
+              Need help?
+            </strong>
 
             <p>
               Explore DocIQ and learn smarter.
@@ -266,7 +472,7 @@ function Upload() {
           </div>
 
           <button
-            className="logout-button"
+            className="dashboard-logout"
             type="button"
             onClick={handleLogout}
           >
@@ -278,79 +484,95 @@ function Upload() {
 
       </aside>
 
-      {/* ================= MAIN CONTENT ================= */}
-
+      {/* MAIN CONTENT */}
       <main className="upload-content">
 
-        {/* TOPBAR */}
-
-        <header className="upload-topbar">
+        {/* TOP BAR */}
+        <div className="upload-topbar">
 
           <div className="upload-search">
             <span>⌕</span>
 
             <input
               type="text"
-              placeholder="Search your documents..."
+              placeholder="Search documents..."
+              onKeyDown={(event) => {
+                if (
+                  event.key === "Enter"
+                ) {
+                  window.location.hash =
+                    "documents";
+                }
+              }}
             />
           </div>
 
           <div className="upload-user">
 
             <div className="upload-user-avatar">
-              {userName.charAt(0).toUpperCase()}
+              {userName
+                .charAt(0)
+                .toUpperCase()}
             </div>
 
             <div className="upload-user-text">
+
               <strong>
-                Hello, {userName} 👋
+                {userName}
               </strong>
 
               <span>
                 Student
               </span>
+
             </div>
 
           </div>
 
-        </header>
+        </div>
 
-        {/* PAGE HEADER */}
-
+        {/* HEADING */}
         <section className="upload-heading">
 
-          <div>
-
-            <div className="upload-eyebrow">
-              DOCUMENT MANAGEMENT
-            </div>
-
-            <h1>
-              Upload Document
-            </h1>
-
-            <p>
-              Upload your study materials and let DocIQ turn them into knowledge.
-            </p>
-
+          <div className="upload-eyebrow">
+            ADD TO YOUR LIBRARY
           </div>
+
+          <h1>
+            Upload Document
+          </h1>
+
+          <p>
+            Upload your study material and
+            let DocIQ help you read,
+            understand, and study it.
+          </p>
 
         </section>
 
-        {/* ================= STATISTICS ================= */}
-
+        {/* STATISTICS */}
         <section className="upload-stats">
 
           <div className="upload-stat-card">
 
             <div className="upload-stat-icon purple-stat">
-              ▤
+              📚
             </div>
 
             <div>
-              <span>Total Documents</span>
-              <strong>{recentFiles.length}</strong>
-              <small>Documents uploaded</small>
+
+              <span>
+                TOTAL DOCUMENTS
+              </span>
+
+              <strong>
+                {recentDocuments.length}
+              </strong>
+
+              <small>
+                In your library
+              </small>
+
             </div>
 
           </div>
@@ -358,13 +580,23 @@ function Upload() {
           <div className="upload-stat-card">
 
             <div className="upload-stat-icon coral-stat">
-              ✦
+              ↑
             </div>
 
             <div>
-              <span>AI Summaries</span>
-              <strong>0</strong>
-              <small>Summaries generated</small>
+
+              <span>
+                UPLOAD LIMIT
+              </span>
+
+              <strong>
+                50 MB
+              </strong>
+
+              <small>
+                Maximum file size
+              </small>
+
             </div>
 
           </div>
@@ -372,13 +604,23 @@ function Upload() {
           <div className="upload-stat-card">
 
             <div className="upload-stat-icon green-stat">
-              ◷
+              ✓
             </div>
 
             <div>
-              <span>This Week</span>
-              <strong>{thisWeekCount}</strong>
-              <small>Documents uploaded</small>
+
+              <span>
+                SUPPORTED
+              </span>
+
+              <strong>
+                7 Types
+              </strong>
+
+              <small>
+                PDF, DOCX, PPTX, images, TXT
+              </small>
+
             </div>
 
           </div>
@@ -386,59 +628,81 @@ function Upload() {
           <div className="upload-stat-card">
 
             <div className="upload-stat-icon orange-stat">
-              ◉
+              ✦
             </div>
 
             <div>
-              <span>Storage Used</span>
-              <strong>{formatFileSize(totalStorage)}</strong>
-              <small>Of your available storage</small>
+
+              <span>
+                AI READY
+              </span>
+
+              <strong>
+                Yes
+              </strong>
+
+              <small>
+                After processing
+              </small>
+
             </div>
 
           </div>
 
         </section>
 
-        {/* ================= UPLOAD + FEATURES ================= */}
-
+        {/* UPLOAD LAYOUT */}
         <section className="upload-layout">
 
-          {/* UPLOAD CARD */}
-
+          {/* MAIN UPLOAD CARD */}
           <div className="upload-main-card">
 
             <div className="upload-card-heading">
 
               <div>
+
                 <h2>
-                  Upload your document
+                  Select your document
                 </h2>
 
                 <p>
-                  PDF, DOC, DOCX and TXT files up to 10 MB
+                  Choose a file to add to
+                  your DocIQ library.
                 </p>
+
               </div>
 
-              <div className="upload-card-badge">
-                AI Powered
-              </div>
+              <span className="upload-card-badge">
+                MAX 50 MB
+              </span>
 
             </div>
 
+            {/* DROPZONE */}
             <div
               className={`upload-dropzone ${
-                dragActive ? "drag-active" : ""
-              } ${selectedFile ? "has-file" : ""}`}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
+                selectedFile
+                  ? "has-file"
+                  : ""
+              } ${
+                dragActive
+                  ? "drag-active"
+                  : ""
+              }`}
+              onDragOver={
+                handleDragOver
+              }
+              onDragLeave={
+                handleDragLeave
+              }
               onDrop={handleDrop}
             >
 
               {!selectedFile ? (
-                <>
 
+                <>
                   <div className="cloud-icon">
-                    ↑
+                    ☁
                   </div>
 
                   <h2>
@@ -446,7 +710,8 @@ function Upload() {
                   </h2>
 
                   <p>
-                    or choose a file from your device
+                    or choose a file from
+                    your computer
                   </p>
 
                   <label className="choose-file">
@@ -454,41 +719,50 @@ function Upload() {
                     Choose File
 
                     <input
-                      ref={fileInputRef}
                       type="file"
-                      accept=".pdf,.doc,.docx,.txt"
-                      onChange={handleFileChange}
+                      accept=".pdf,.docx,.pptx,.png,.jpg,.jpeg,.txt"
+                      onChange={
+                        handleFileChange
+                      }
                       hidden
                     />
 
                   </label>
 
-                  <span className="supported">
-                    Supported formats: PDF, DOC, DOCX, TXT
-                  </span>
+                  <div className="supported">
+                    Supported: PDF, DOCX,
+                    PPTX, PNG, JPG, JPEG, TXT
+                  </div>
 
-                  <span className="max-size">
-                    Maximum file size: 10 MB
-                  </span>
-
+                  <div className="max-size">
+                    Maximum file size: 50 MB
+                  </div>
                 </>
+
               ) : (
 
                 <div className="selected-file">
 
                   <div className="file-icon">
-                    {getFileIcon(selectedFile.name)}
+                    {getFileIcon(
+                      selectedFile.name
+                    )}
                   </div>
 
                   <div className="file-info">
 
-                    <strong title={selectedFile.name}>
+                    <strong>
                       {selectedFile.name}
                     </strong>
 
                     <span>
-                      {getFileType(selectedFile.name)} •{" "}
-                      {formatFileSize(selectedFile.size)}
+                      {getFileType(
+                        selectedFile.name
+                      )}{" "}
+                      •{" "}
+                      {formatFileSize(
+                        selectedFile.size
+                      )}
                     </span>
 
                   </div>
@@ -496,7 +770,11 @@ function Upload() {
                   <button
                     type="button"
                     className="remove-file"
-                    onClick={removeFile}
+                    onClick={
+                      handleRemoveFile
+                    }
+                    disabled={uploading}
+                    title="Remove file"
                   >
                     ×
                   </button>
@@ -507,33 +785,33 @@ function Upload() {
 
             </div>
 
+            {/* MESSAGE */}
             {message && (
               <div
-                className={`upload-message ${
-                  message.includes("successfully")
-                    ? "success"
-                    : "error"
-                }`}
+                className={`upload-message ${messageType}`}
               >
                 {message}
               </div>
             )}
 
+            {/* ANALYZE BUTTON */}
             <button
-              className="analyze-button"
               type="button"
-              disabled={!selectedFile || uploading}
+              className="analyze-button"
               onClick={handleUpload}
+              disabled={
+                !selectedFile ||
+                uploading
+              }
             >
               {uploading
-                ? "Uploading..."
-                : "↑ Upload & Analyze →"}
+                ? "Uploading & Processing..."
+                : "Upload & Analyze Document →"}
             </button>
 
           </div>
 
-          {/* FEATURES */}
-
+          {/* SIDE INFORMATION */}
           <div className="upload-side-info">
 
             <div className="side-info-card">
@@ -543,13 +821,16 @@ function Upload() {
               </div>
 
               <div>
+
                 <strong>
                   AI Summaries
                 </strong>
 
                 <p>
-                  Get concise summaries from your documents.
+                  Turn long documents
+                  into clear summaries.
                 </p>
+
               </div>
 
               <span className="side-arrow">
@@ -561,17 +842,20 @@ function Upload() {
             <div className="side-info-card">
 
               <div className="side-card-icon blue">
-                ?
+                🔍
               </div>
 
               <div>
+
                 <strong>
-                  Ask Questions
+                  Smart Search
                 </strong>
 
                 <p>
-                  Chat with your documents using AI.
+                  Find important
+                  information quickly.
                 </p>
+
               </div>
 
               <span className="side-arrow">
@@ -583,17 +867,20 @@ function Upload() {
             <div className="side-info-card">
 
               <div className="side-card-icon green">
-                文
+                🎓
               </div>
 
               <div>
+
                 <strong>
-                  Translate
+                  Study Tools
                 </strong>
 
                 <p>
-                  Translate document content instantly.
+                  Create notes, MCQs,
+                  and flashcards.
                 </p>
+
               </div>
 
               <span className="side-arrow">
@@ -606,20 +893,21 @@ function Upload() {
 
         </section>
 
-        {/* ================= RECENT UPLOADS ================= */}
-
+        {/* RECENT UPLOADS */}
         <section className="recent-upload-section">
 
           <div className="recent-header">
 
             <div>
+
               <h2>
                 Recent Uploads
               </h2>
 
               <p>
-                Your recently uploaded documents
+                Your latest documents
               </p>
+
             </div>
 
             <a href="#documents">
@@ -628,7 +916,7 @@ function Upload() {
 
           </div>
 
-          {recentFiles.length === 0 ? (
+          {recentDocuments.length === 0 ? (
 
             <div className="recent-empty">
 
@@ -637,13 +925,16 @@ function Upload() {
               </div>
 
               <div>
+
                 <strong>
                   No documents uploaded yet
                 </strong>
 
                 <p>
-                  Upload your first document and it will appear here.
+                  Upload your first document
+                  to see it here.
                 </p>
+
               </div>
 
             </div>
@@ -652,46 +943,68 @@ function Upload() {
 
             <div className="recent-list">
 
-              {recentFiles.map((file) => (
+              {recentDocuments
+                .slice(0, 5)
+                .map((document) => (
 
-                <div
-                  className="recent-document"
-                  key={file.id}
-                >
+                  <div
+                    className="recent-document"
+                    key={
+                      document.id ||
+                      document.name
+                    }
+                  >
 
-                  <div className={`recent-file-icon ${file.type ? file.type.toLowerCase() : "file"}`}>
-                    {getFileIcon(file.name)}
-                  </div>
+                    <div
+                      className={`recent-file-icon ${getRecentIconClass(
+                        document.name
+                      )}`}
+                    >
+                      {getFileIcon(
+                        document.name
+                      )}
+                    </div>
 
-                  <div className="recent-file-details">
+                    <div className="recent-file-details">
 
-                    <strong title={file.name}>
-                      {file.name}
-                    </strong>
+                      <strong>
+                        {document.name}
+                      </strong>
 
-                    <span>
-                      {file.type} • {formatFileSize(file.size)}
+                      <span>
+                        {document.type ||
+                          getFileType(
+                            document.name
+                          )}{" "}
+                        •{" "}
+                        {formatFileSize(
+                          document.size
+                        )}
+                      </span>
+
+                    </div>
+
+                    <span className="recent-upload-date">
+                      {formatDate(
+                        document.date
+                      )}
                     </span>
 
+                    <button
+                      type="button"
+                      className="recent-view-button"
+                      onClick={() =>
+                        handleViewRecent(
+                          document.id
+                        )
+                      }
+                    >
+                      View
+                    </button>
+
                   </div>
 
-                  <div className="recent-upload-date">
-                    {formatDate(file.date)}
-                  </div>
-
-                  <button
-                    type="button"
-                    className="recent-view-button"
-                    onClick={() => {
-                      window.location.hash = `reader/${file.id}`;
-                    }}
-                  >
-                    View
-                  </button>
-
-                </div>
-
-              ))}
+                ))}
 
             </div>
 
@@ -699,21 +1012,19 @@ function Upload() {
 
         </section>
 
-        {/* ================= HOW IT WORKS ================= */}
-
+        {/* HOW DOCIQ WORKS */}
         <section className="upload-bottom">
 
           <div className="bottom-title">
 
-            <div>
-              <h2>
-                How DocIQ works
-              </h2>
+            <h2>
+              How DocIQ works
+            </h2>
 
-              <p>
-                Turn your study materials into useful knowledge.
-              </p>
-            </div>
+            <p>
+              From document to understanding
+              in three simple steps.
+            </p>
 
           </div>
 
@@ -726,13 +1037,16 @@ function Upload() {
               </div>
 
               <div>
+
                 <strong>
                   Upload
                 </strong>
 
                 <p>
-                  Add your notes or study materials.
+                  Add a PDF, DOCX, PPTX,
+                  or TXT file.
                 </p>
+
               </div>
 
             </div>
@@ -748,13 +1062,16 @@ function Upload() {
               </div>
 
               <div>
+
                 <strong>
-                  Analyze
+                  Process
                 </strong>
 
                 <p>
-                  DocIQ extracts and understands your document.
+                  DocIQ extracts and
+                  prepares your content.
                 </p>
+
               </div>
 
             </div>
@@ -770,13 +1087,16 @@ function Upload() {
               </div>
 
               <div>
+
                 <strong>
                   Learn
                 </strong>
 
                 <p>
-                  Summarize, ask questions and translate.
+                  Read, search, ask AI,
+                  and study smarter.
                 </p>
+
               </div>
 
             </div>
