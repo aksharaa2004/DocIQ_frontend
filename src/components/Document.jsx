@@ -624,7 +624,7 @@ function Documents() {
             href="#dashboard"
             className="dashboard-menu-item"
           >
-            <span>▦</span>
+            <span>🏠</span>
             Dashboard
           </a>
 
@@ -632,7 +632,7 @@ function Documents() {
             href="#documents"
             className="dashboard-menu-item active"
           >
-            <span>▤</span>
+            <span>📄</span>
             My Documents
           </a>
 
@@ -640,7 +640,7 @@ function Documents() {
             href="#upload"
             className="dashboard-menu-item"
           >
-            <span>↑</span>
+            <span>📤</span>
             Upload Document
           </a>
 
@@ -656,7 +656,7 @@ function Documents() {
             href="#assistant"
             className="dashboard-menu-item"
           >
-            <span>✦</span>
+            <span>🤖</span>
             AI Assistant
           </a>
 
@@ -664,7 +664,7 @@ function Documents() {
             href="#settings"
             className="dashboard-menu-item"
           >
-            <span>⚙</span>
+            <span>⚙️</span>
             Settings
           </a>
 

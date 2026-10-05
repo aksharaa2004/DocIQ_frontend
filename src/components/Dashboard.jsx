@@ -117,13 +117,13 @@ function Dashboard() {
             href="#dashboard"
             className="dashboard-menu-item active"
           >
-            <span>▦</span>
+            <span>🏠</span>
             Dashboard
           </a>
 
           {/* Documents */}
          <a href="#documents" className="dashboard-menu-item">
-              <span>▤</span>
+              <span>📄</span>
               My Documents
         </a>
 
@@ -132,7 +132,7 @@ function Dashboard() {
             href="#upload"
             className="dashboard-menu-item"
           >
-            <span>↑</span>
+            <span>📤</span>
             Upload Document
           </a>
 
@@ -141,7 +141,7 @@ function Dashboard() {
             href="#study"
             className="dashboard-menu-item"
           >
-            <span>▣</span>
+            <span>🎓</span>
             Study Hub
           </a>
 
@@ -150,7 +150,7 @@ function Dashboard() {
             href="#assistant"
             className="dashboard-menu-item"
           >
-            <span>✦</span>
+            <span>🤖</span>
             AI Assistant
           </a>
 
@@ -159,7 +159,7 @@ function Dashboard() {
             href="#settings"
             className="dashboard-menu-item"
           >
-            <span>⚙</span>
+            <span>⚙️</span>
             Settings
           </a>
 

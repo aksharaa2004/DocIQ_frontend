@@ -1,0 +1,402 @@
+html[data-dociq-theme="dark"] {
+  color-scheme: dark;
+  background: #17131b;
+}
+
+html[data-dociq-theme="dark"] body {
+  background: #17131b;
+  color: #f2ebf3;
+}
+
+html[data-dociq-theme="dark"] :is(
+  .dashboard-page,
+  .documents-page,
+  .upload-page,
+  .reader-page,
+  .assistant-page,
+  .processing-page,
+  .study-main,
+  .home-page,
+  .login-page,
+  .signup-page
+) {
+  background-color: #17131b;
+  color: #f2ebf3;
+}
+
+html[data-dociq-theme="dark"] :is(
+  .dashboard-page,
+  .documents-page,
+  .upload-page,
+  .reader-page,
+  .assistant-page,
+  .processing-page,
+  .study-main,
+  .home-page,
+  .login-page,
+  .signup-page
+) :is(h1, h2, h3, h4, p, span, strong, small, label, legend, a, li, th, td, button) {
+  color: #f2ebf3;
+}
+
+/* Keep the brand navigation and primary action colors intact in dark mode. */
+html[data-dociq-theme="dark"] .dashboard-sidebar,
+html[data-dociq-theme="dark"] .dashboard-sidebar * {
+  color: #fff;
+}
+
+html[data-dociq-theme="dark"] .dashboard-sidebar .dashboard-menu-item.active {
+  background: #633266;
+  color: #fff;
+}
+
+html[data-dociq-theme="dark"] .dashboard-sidebar .dashboard-menu-item.active span {
+  color: #fff;
+}
+
+html[data-dociq-theme="dark"] :is(
+  .dashboard-search,
+  .dashboard-welcome-section,
+  .dashboard-stat-card,
+  .dashboard-panel,
+  .dashboard-empty-state,
+  .quick-action-item,
+  .upload-stat-card,
+  .upload-main-card,
+  .side-info-card,
+  .recent-upload-section,
+  .upload-bottom,
+  .document-card,
+  .documents-search,
+  .documents-toolbar,
+  .documents-error,
+  .documents-tip,
+  .documents-info-card,
+  .documents-recent-item,
+  .documents-empty,
+  .documents-recent,
+  .document-status,
+  .documents-search-result,
+  .documents-all-section,
+  .documents-recent-list,
+  .documents-recent-open,
+  .document-action.secondary,
+  .documents-error button,
+  .documents-empty button,
+  .reader-content-card,
+  .reader-toolbar,
+  .reader-search-results,
+  .reader-search,
+  .reader-bookmarks,
+  .reader-page-card,
+  .reader-no-pages,
+  .reader-tts-panel,
+  .reader-translation-panel,
+  .reader-search-navigation,
+  .reader-translated-result,
+  .reader-search-result,
+  .reader-bookmark-list button,
+  .reader-controls > button,
+  .reader-translation-voice,
+  .reader-highlight-remove,
+  .reader-bookmark,
+  .reader-translated-markdown th,
+  .reader-page-header,
+  .reader-highlight-item,
+  .reader-no-results,
+  .reader-translation-error,
+  .reader-tts-not-supported,
+  .reader-loading,
+  .reader-error,
+  .reader-page article,
+  .reader-page-text,
+  .reader-empty-page,
+  .study-hero,
+  .study-stat-card,
+  .study-tool-card,
+  .study-document-row,
+  .study-message,
+  .study-error,
+  .study-empty,
+  .study-document-hero,
+  .study-tabs,
+  .study-content-card,
+  .study-coming-soon,
+  .study-short-note,
+  .study-flashcard,
+  .study-flashcard-nav,
+  .study-page-preview,
+  .study-exam-empty,
+  .study-question-list-header,
+  .study-question-card,
+  .study-answer-card,
+  .study-answer-input,
+  .study-improved-answer,
+  .study-short-note,
+  .study-document-controls select,
+  .upload-search,
+  .upload-dropzone,
+  .selected-file,
+  .recent-empty,
+  .recent-document,
+  .recent-view-button,
+  .upload-message,
+  .upload-card-badge,
+  .remove-file,
+  .step,
+  .remove-file,
+  .assistant-back,
+  .assistant-provider,
+  .assistant-chat,
+  .assistant-header,
+  .assistant-document-picker,
+  .assistant-history-toolbar,
+  .assistant-composer,
+  .assistant-messages .ant-bubble-start .ant-bubble-content,
+  .assistant-markdown blockquote,
+  .assistant-markdown :not(pre) > code,
+  .assistant-markdown th,
+  .processing-card,
+  .processing-step,
+  .processing-error,
+  .login-form-area,
+  .login-ai-result,
+  .google-login-button,
+  .signup-heading-icon,
+  .home-navbar,
+  .hero-badge,
+  .secondary-hero-button,
+  .ai-document-card,
+  .document-preview-card,
+  .ai-action,
+  .floating-card,
+  .floating-ai-card,
+  .features-section,
+  .feature-card,
+  .how-section,
+  .trust-section,
+  .about-section,
+  .about-card,
+  .cta-section,
+  .home-footer,
+  .study-main article,
+  .study-main section,
+  .login-card,
+  .signup-card
+) {
+  background-color: #241e28;
+  background-image: none;
+  border-color: #493d4c;
+}
+
+html[data-dociq-theme="dark"] .assistant-history-toolbar {
+  background-color: #241e28;
+  border-color: #493d4c;
+}
+
+html[data-dociq-theme="dark"] .assistant-history-context {
+  color: #c8bacb;
+}
+
+html[data-dociq-theme="dark"] .assistant-history-toolbar select,
+html[data-dociq-theme="dark"] .assistant-document-picker select {
+  background-color: #2c2430;
+  color: #f2ebf3;
+  border-color: #58495a;
+}
+
+html[data-dociq-theme="dark"] .assistant-messages .ant-bubble-end .ant-bubble-content {
+  background-color: #56365d;
+  color: #fff;
+}
+
+html[data-dociq-theme="dark"] .assistant-composer .ant-sender {
+  background-color: #2c2430;
+  border-color: #58495a;
+}
+
+html[data-dociq-theme="dark"] .assistant-composer .ant-sender input,
+html[data-dociq-theme="dark"] .assistant-composer .ant-sender textarea {
+  color: #f2ebf3;
+}
+
+html[data-dociq-theme="dark"] :is(
+  .dashboard-stat-icon,
+  .quick-action-icon,
+  .documents-error > span,
+  .documents-search-clear,
+  .document-icon,
+  .documents-recent-icon,
+  .documents-info-icon,
+  .upload-stat-icon,
+  .side-card-icon,
+  .cloud-icon,
+  .file-icon,
+  .recent-file-icon,
+  .step-number,
+  .dashboard-empty-icon,
+  .dashboard-banner-icon,
+  .documents-empty-icon,
+  .documents-tip-icon,
+  .empty-document-icon,
+  .processing-icon,
+  .brand-icon,
+  .feature-icon,
+  .stat-icon,
+  .more-icon,
+  .step-icon,
+  .cta-icon,
+  .result-icon,
+  .login-heading-icon,
+  .login-brand-icon,
+  .signup-brand-icon,
+  .signup-input-icon,
+  .settings-intro-icon,
+  .settings-section-icon,
+  .settings-modal-icon,
+  .assistant-mark,
+  .assistant-upload-link,
+  .upload-card-badge,
+  .study-stat-icon,
+  .study-tool-icon,
+  .study-document-file-icon,
+  .study-large-file-icon,
+  .study-placeholder-icon,
+  .study-exam-rules span,
+  .study-question-list-header > span,
+  .study-question-number,
+  .study-mark-badge,
+  .reader-file-icon,
+  .reader-translation-icon,
+  .reader-loading-icon,
+  .reader-error-icon,
+  .reader-translation-icon,
+  .login-document-icon,
+  .signup-heading-icon,
+  .action-icon,
+  .hero-badge,
+  .document-file-icon
+) {
+  background-color: #3b3040;
+  color: #f2ebf3;
+}
+
+html[data-dociq-theme="dark"] :is(.dashboard-page, .documents-page, .upload-page, .reader-page, .assistant-page, .processing-page, .study-main, .home-page, .login-page, .signup-page) :is(input, textarea, select) {
+  color-scheme: dark;
+  background-color: #2c2430;
+  border-color: #58495a;
+  color: #f2ebf3;
+}
+
+html[data-dociq-theme="dark"] .signup-page,
+html[data-dociq-theme="dark"] .home-navbar {
+  background-image: none;
+}
+
+html[data-dociq-theme="dark"] :is(.study-hero-icon, .study-empty-icon, .study-exam-empty-icon, .study-placeholder-icon) {
+  background-color: #3b3040;
+}
+
+html[data-dociq-theme="dark"] :is(.processing-progress, .processing-step span) {
+  background-color: #493d4c;
+}
+
+html[data-dociq-theme="dark"] :is(.reader-saved-highlight, .reader-search-highlight, .reader-page-text mark, .study-mark-badge) {
+  color: #30243b;
+}
+
+html[data-dociq-theme="dark"] .reader-search-highlight.current,
+html[data-dociq-theme="dark"] .reader-page-text .search-match.active,
+html[data-dociq-theme="dark"] .reader-translate-button,
+html[data-dociq-theme="dark"] .study-primary-button,
+html[data-dociq-theme="dark"] .study-generate-button,
+html[data-dociq-theme="dark"] .login-visual {
+  background-color: #4b254f;
+}
+
+html[data-dociq-theme="dark"] :is(.dashboard-search, .documents-search, .assistant-composer) input {
+  background-color: transparent;
+}
+
+html[data-dociq-theme="dark"] :is(input, textarea, select) {
+  color-scheme: dark;
+  background-color: #2c2430;
+  border-color: #58495a;
+  color: #f2ebf3;
+}
+
+html[data-dociq-theme="dark"] input::placeholder,
+html[data-dociq-theme="dark"] textarea::placeholder {
+  color: #b9aaba;
+}
+
+html[data-dociq-theme="dark"] .global-theme-toggle {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 1200;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid #68476d;
+  border-radius: 999px;
+  background: #4b254f;
+  color: #fff;
+  box-shadow: 0 8px 24px #100b1640;
+  font: 650 13px/1 "Inter", "Segoe UI", sans-serif;
+  cursor: pointer;
+  transition: transform 150ms ease, background-color 150ms ease;
+}
+
+html[data-dociq-theme="dark"] .global-theme-toggle:hover {
+  transform: translateY(-2px);
+  background: #633266;
+}
+
+html[data-dociq-theme="dark"] .global-theme-toggle * {
+  color: #fff;
+}
+
+.global-theme-toggle {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 1200;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid #68476d;
+  border-radius: 999px;
+  background: #4b254f;
+  color: #fff;
+  box-shadow: 0 8px 24px #100b1640;
+  font: 650 13px/1 "Inter", "Segoe UI", sans-serif;
+  cursor: pointer;
+  transition: transform 150ms ease, background-color 150ms ease;
+}
+
+.global-theme-toggle:hover {
+  transform: translateY(-2px);
+  background: #633266;
+}
+
+.global-theme-toggle:focus-visible {
+  outline: 3px solid #f28c68;
+  outline-offset: 3px;
+}
+
+.global-theme-toggle-icon {
+  font-size: 17px;
+}
+
+@media (max-width: 540px) {
+  .global-theme-toggle {
+    right: 14px;
+    bottom: 14px;
+    min-height: 42px;
+  }
+}

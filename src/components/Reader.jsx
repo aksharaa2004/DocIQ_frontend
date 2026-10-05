@@ -1,4 +1,4 @@
-import React, {
+import {
   useEffect,
   useMemo,
   useRef,
@@ -47,8 +47,8 @@ function Reader({ documentId }) {
   // =========================================================
 
   const [documentData, setDocumentData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(Boolean(documentId));
+  const [error, setError] = useState(documentId ? "" : "No document was selected.");
 
   // =========================================================
   // SEARCH
@@ -79,10 +79,13 @@ function Reader({ documentId }) {
   const [selectedVoice, setSelectedVoice] = useState("");
   const [speechRate, setSpeechRate] = useState(1);
   const [speechStatus, setSpeechStatus] = useState("idle");
+  const [speechLanguageError, setSpeechLanguageError] = useState("");
   const [speechSource, setSpeechSource] = useState("");
   const [currentPageNumber, setCurrentPageNumber] = useState(1);
   const [translationLanguage, setTranslationLanguage] = useState("English");
+  const [translationResultLanguage, setTranslationResultLanguage] = useState("English");
   const [translation, setTranslation] = useState("");
+  const [selectedTranslationPages, setSelectedTranslationPages] = useState([]);
   const [translationSource, setTranslationSource] = useState("");
   const [translationLoading, setTranslationLoading] = useState(false);
   const [translationError, setTranslationError] = useState("");
@@ -98,6 +101,9 @@ function Reader({ documentId }) {
   const speechRateRef = useRef(1);
   const selectedVoiceRef = useRef("");
   const speechLanguageRef = useRef("");
+  const generatedAudioRef = useRef(null);
+  const generatedAudioUrlRef = useRef("");
+  const generatedSpeechRef = useRef(false);
 
   // =========================================================
   // GET DOCUMENT PAGES
@@ -210,8 +216,6 @@ function Reader({ documentId }) {
 
   useEffect(() => {
     if (!documentId) {
-      setLoading(false);
-      setError("No document was selected.");
       return;
     }
 
@@ -344,6 +348,10 @@ function Reader({ documentId }) {
       if (speechSupported) {
         window.speechSynthesis.cancel();
       }
+      generatedAudioRef.current?.pause();
+      if (generatedAudioUrlRef.current) URL.revokeObjectURL(generatedAudioUrlRef.current);
+      generatedAudioUrlRef.current = "";
+      generatedSpeechRef.current = false;
 
       speechActiveRef.current = false;
       speechQueueRef.current = [];
@@ -524,7 +532,10 @@ function Reader({ documentId }) {
       const matchingVoice = voices.find(
         (voice) => voice.lang?.toLowerCase() === requestedLanguage.toLowerCase()
       ) || voices.find(
-        (voice) => voice.lang?.toLowerCase().startsWith(`${baseLanguage}-`)
+        (voice) => {
+          const voiceLanguage = voice.lang?.toLowerCase();
+          return voiceLanguage === baseLanguage || voiceLanguage?.startsWith(`${baseLanguage}-`);
+        }
       );
       if (matchingVoice) utterance.voice = matchingVoice;
     } else {
@@ -570,6 +581,68 @@ function Reader({ documentId }) {
   // START SPEECH
   // =========================================================
 
+  const playGeneratedMalayalamChunk = async (chunks, index) => {
+    if (!speechActiveRef.current) return;
+    if (index >= chunks.length) {
+      speechActiveRef.current = false;
+      generatedSpeechRef.current = false;
+      setSpeechStatus("idle");
+      setSpeechSource("");
+      return;
+    }
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/reader/speech`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: chunks[index], language: "Malayalam" }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Could not generate Malayalam speech.");
+      if (!speechActiveRef.current) return;
+      const audioBytes = Uint8Array.from(atob(data.audioBase64), (char) => char.charCodeAt(0));
+      const audioBlob = new Blob([audioBytes], { type: data.mimeType || "audio/wav" });
+      if (generatedAudioUrlRef.current) URL.revokeObjectURL(generatedAudioUrlRef.current);
+      generatedAudioUrlRef.current = URL.createObjectURL(audioBlob);
+      const audio = new Audio(generatedAudioUrlRef.current);
+      generatedAudioRef.current = audio;
+      audio.onended = () => playGeneratedMalayalamChunk(chunks, index + 1);
+      audio.onerror = () => {
+        speechActiveRef.current = false;
+        generatedSpeechRef.current = false;
+        setSpeechStatus("idle");
+        setSpeechLanguageError("Generated Malayalam audio could not be played by this browser.");
+      };
+      await audio.play();
+      setSpeechStatus("speaking");
+    } catch (error) {
+      speechActiveRef.current = false;
+      generatedSpeechRef.current = false;
+      setSpeechStatus("idle");
+      setSpeechSource("");
+      setSpeechLanguageError(error.message || "Could not generate Malayalam speech.");
+    }
+  };
+
+  const startGeneratedMalayalamSpeech = (text, source) => {
+    const chunks = splitTextIntoChunks(text).flatMap((chunk) => {
+      const parts = [];
+      for (let offset = 0; offset < chunk.length; offset += 2600) {
+        parts.push(chunk.slice(offset, offset + 2600));
+      }
+      return parts;
+    });
+    if (!chunks.length) return;
+    window.speechSynthesis.cancel();
+    generatedAudioRef.current?.pause();
+    if (generatedAudioUrlRef.current) URL.revokeObjectURL(generatedAudioUrlRef.current);
+    speechActiveRef.current = true;
+    generatedSpeechRef.current = true;
+    setSpeechLanguageError("");
+    setSpeechSource(source);
+    setSpeechStatus("speaking");
+    playGeneratedMalayalamChunk(chunks, 0);
+  };
+
   const startSpeech = (
     text,
     source = "document",
@@ -583,7 +656,36 @@ function Reader({ documentId }) {
       return;
     }
 
+    generatedAudioRef.current?.pause();
+    if (generatedAudioUrlRef.current) URL.revokeObjectURL(generatedAudioUrlRef.current);
+    generatedAudioUrlRef.current = "";
+    generatedSpeechRef.current = false;
+
+    const requestedLanguage = SPEECH_LANGUAGE_CODES[language] || "";
+    if (requestedLanguage) {
+      const baseLanguage = requestedLanguage.split("-")[0].toLowerCase();
+      const matchingVoice = voices.find(
+        (voice) => voice.lang?.toLowerCase() === requestedLanguage.toLowerCase()
+      ) || voices.find(
+        (voice) => {
+          const voiceLanguage = voice.lang?.toLowerCase();
+          return voiceLanguage === baseLanguage || voiceLanguage?.startsWith(`${baseLanguage}-`);
+        }
+      );
+      if (!matchingVoice && language === "Malayalam") {
+        startGeneratedMalayalamSpeech(text, source);
+        return;
+      }
+      if (!matchingVoice) {
+        setSpeechLanguageError(
+          `No ${language} speech voice is available in this browser or on this device. Add a ${language} text-to-speech voice in your device settings, then reload the reader.`
+        );
+        return;
+      }
+    }
+
     window.speechSynthesis.cancel();
+    setSpeechLanguageError("");
 
     const chunks =
       splitTextIntoChunks(text);
@@ -666,20 +768,30 @@ function Reader({ documentId }) {
     container.innerHTML = DOMPurify.sanitize(marked.parse(translation));
     startSpeech(
       container.textContent || container.innerText || "",
-      `translation in ${translationLanguage}`,
-      translationLanguage
+      `translation in ${translationResultLanguage}`,
+      translationResultLanguage
     );
   };
 
   const translateText = async (source) => {
-    let text = "";
-    let sourceLabel = "";
+    const targetLanguage = translationLanguage;
+    let text;
+    let sourceLabel;
     let sections = [];
 
     if (source === "selection") {
       text = window.getSelection()?.toString().trim() || "";
       sourceLabel = "Selected text";
-      if (text) sections = [{ label: sourceLabel, text }];
+      if (text) {
+        const chunks = [];
+        for (let offset = 0; offset < text.length; offset += 2500) {
+          chunks.push(text.slice(offset, offset + 2500));
+        }
+        sections = chunks.map((chunk, index) => ({
+          label: chunks.length > 1 ? `${sourceLabel} (part ${index + 1}/${chunks.length})` : sourceLabel,
+          text: chunk,
+        }));
+      }
     } else if (source === "document") {
       sourceLabel = "Entire document";
       sections = [
@@ -701,6 +813,27 @@ function Reader({ documentId }) {
         }));
         }),
       ];
+    } else if (source === "pages") {
+      const selectedPageSet = new Set(selectedTranslationPages.map(String));
+      const chosenPages = pages.filter((page, index) =>
+        selectedPageSet.has(String(getPageNumber(page, index)))
+      );
+      sourceLabel = `Selected pages: ${chosenPages.map((page) =>
+        getPageNumber(page, pages.indexOf(page))
+      ).join(", ")}`;
+      sections = chosenPages.flatMap((page) => {
+        const pageNumber = getPageNumber(page, pages.indexOf(page));
+        const pageText = getPageText(page).trim();
+        if (!pageText) return [];
+        const chunks = [];
+        for (let offset = 0; offset < pageText.length; offset += 2500) {
+          chunks.push(pageText.slice(offset, offset + 2500));
+        }
+        return chunks.map((chunk, chunkIndex) => ({
+          label: chunks.length > 1 ? `Page ${pageNumber} (part ${chunkIndex + 1}/${chunks.length})` : `Page ${pageNumber}`,
+          text: chunk,
+        }));
+      });
     } else {
       const page = pages.find(
         (item, index) =>
@@ -716,6 +849,10 @@ function Reader({ documentId }) {
         ? "Select some text in the document first."
         : source === "document"
           ? "There is no extracted text in this document to translate."
+          : source === "pages"
+            ? selectedTranslationPages.length
+              ? "The selected pages have no extracted text to translate."
+              : "Select one or more pages to translate first."
           : "There is no extracted text on this page to translate.");
       setTranslation("");
       return;
@@ -725,31 +862,31 @@ function Reader({ documentId }) {
     setTranslationError("");
     setTranslation("");
     setTranslationSource(sourceLabel);
+    setTranslationResultLanguage(targetLanguage);
 
     try {
       const translatedSections = [];
       for (let index = 0; index < sections.length; index += 1) {
         const section = sections[index];
-        if (source === "document") {
+        if (source === "document" || source === "pages") {
           setTranslationProgress(`Translating section ${index + 1} of ${sections.length}…`);
         }
-        const response = await fetch(`${API_BASE_URL}/api/assistant/chat`, {
+        const response = await fetch(`${API_BASE_URL}/api/assistant/translate`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            messages: [{
-              role: "user",
-              content: `Translate the following document text into ${translationLanguage}. Translate the document title, topic names, headings, labels, and body text too. Preserve meaning, formatting, and paragraph breaks. Do not leave headings or topic names in the original language unless they are proper names. Return only the translation.\n\n${section.text.slice(0, 5500)}`,
-            }],
+            targetLanguage,
+            text: section.text,
           }),
         });
         const data = await response.json();
-        if (!response.ok) throw new Error(data.message || `Translation failed for ${section.label}.`);
-        if (!data.reply) throw new Error(`The translation service returned an empty result for ${section.label}.`);
+        if (!response.ok) throw new Error(`${data.message || "Translation failed."} (${section.label})`);
+        if (!data.reply?.trim()) throw new Error(`The translation service returned an empty result for ${section.label}.`);
         translatedSections.push(`--- ${section.label} ---\n${data.reply}`);
-        setTranslation(translatedSections.join("\n\n"));
       }
+      setTranslation(translatedSections.join("\n\n"));
     } catch (error) {
+      setTranslation("");
       setTranslationError(error.message || "Translation failed. Please try again.");
     } finally {
       setTranslationLoading(false);
@@ -769,6 +906,11 @@ function Reader({ documentId }) {
     if (
       speechStatus === "speaking"
     ) {
+      if (generatedSpeechRef.current) {
+        generatedAudioRef.current?.pause();
+        setSpeechStatus("paused");
+        return;
+      }
       window.speechSynthesis.pause();
       setSpeechStatus("paused");
       return;
@@ -777,6 +919,11 @@ function Reader({ documentId }) {
     if (
       speechStatus === "paused"
     ) {
+      if (generatedSpeechRef.current) {
+        generatedAudioRef.current?.play();
+        setSpeechStatus("speaking");
+        return;
+      }
       window.speechSynthesis.resume();
       setSpeechStatus("speaking");
     }
@@ -792,6 +939,13 @@ function Reader({ documentId }) {
     }
 
     speechActiveRef.current = false;
+    generatedAudioRef.current?.pause();
+    generatedAudioRef.current = null;
+    generatedSpeechRef.current = false;
+    if (generatedAudioUrlRef.current) {
+      URL.revokeObjectURL(generatedAudioUrlRef.current);
+      generatedAudioUrlRef.current = "";
+    }
     speechQueueRef.current = [];
     speechIndexRef.current = 0;
 
@@ -944,13 +1098,6 @@ function Reader({ documentId }) {
   }, [searchQuery, pages]);
 
   // =========================================================
-  // RESET SEARCH INDEX
-  // =========================================================
-
-  useEffect(() => {
-    setCurrentSearchIndex(0);
-  }, [searchQuery]);
-
   // =========================================================
   // SCROLL TO SEARCH RESULT
   // =========================================================
@@ -1693,7 +1840,7 @@ function Reader({ documentId }) {
             href="#dashboard"
             className="dashboard-menu-item"
           >
-            <span>▦</span>
+            <span>🏠</span>
             Dashboard
           </a>
 
@@ -1701,7 +1848,7 @@ function Reader({ documentId }) {
             href="#documents"
             className="dashboard-menu-item"
           >
-            <span>▤</span>
+            <span>📄</span>
             My Documents
           </a>
 
@@ -1709,7 +1856,7 @@ function Reader({ documentId }) {
             href="#upload"
             className="dashboard-menu-item"
           >
-            <span>↑</span>
+            <span>📤</span>
             Upload Document
           </a>
 
@@ -1717,7 +1864,7 @@ function Reader({ documentId }) {
             href="#study"
             className="dashboard-menu-item"
           >
-            <span>▣</span>
+            <span>🎓</span>
             Study Hub
           </a>
 
@@ -1725,7 +1872,7 @@ function Reader({ documentId }) {
             href="#assistant"
             className="dashboard-menu-item"
           >
-            <span>✦</span>
+            <span>🤖</span>
             AI Assistant
           </a>
 
@@ -1733,7 +1880,7 @@ function Reader({ documentId }) {
             href="#settings"
             className="dashboard-menu-item"
           >
-            <span>⚙</span>
+            <span>⚙️</span>
             Settings
           </a>
         </nav>
@@ -1867,11 +2014,10 @@ function Reader({ documentId }) {
             <input
               type="text"
               value={searchQuery}
-              onChange={(event) =>
-                setSearchQuery(
-                  event.target.value
-                )
-              }
+              onChange={(event) => {
+                setSearchQuery(event.target.value);
+                setCurrentSearchIndex(0);
+              }}
               placeholder="Search in document..."
             />
 
@@ -1879,9 +2025,10 @@ function Reader({ documentId }) {
               <button
                 type="button"
                 className="reader-search-clear"
-                onClick={() =>
-                  setSearchQuery("")
-                }
+                onClick={() => {
+                  setSearchQuery("");
+                  setCurrentSearchIndex(0);
+                }}
               >
                 ×
               </button>
@@ -2231,6 +2378,16 @@ function Reader({ documentId }) {
             <button
               className="reader-translate-button"
               type="button"
+              onClick={() => translateText("pages")}
+              disabled={translationLoading || selectedTranslationPages.length === 0}
+            >
+              {translationLoading && translationSource.startsWith("Selected pages:")
+                ? translationProgress || "Translating selected pages…"
+                : `Translate selected pages (${selectedTranslationPages.length})`}
+            </button>
+            <button
+              className="reader-translate-button"
+              type="button"
               onClick={() => translateText("document")}
               disabled={translationLoading}
             >
@@ -2249,16 +2406,54 @@ function Reader({ documentId }) {
             </button>
           </div>
 
+          <div className="reader-translation-page-picker">
+            <div className="reader-translation-page-picker-heading">
+              <strong>Choose pages to translate</strong>
+              <button
+                type="button"
+                onClick={() => setSelectedTranslationPages(
+                  selectedTranslationPages.length === pages.length
+                    ? []
+                    : pages.map((page, index) => getPageNumber(page, index))
+                )}
+                disabled={!pages.length || translationLoading}
+              >
+                {selectedTranslationPages.length === pages.length ? "Clear selection" : "Select all"}
+              </button>
+            </div>
+            <div className="reader-translation-page-options">
+              {pages.map((page, index) => {
+                const pageNumber = getPageNumber(page, index);
+                const selected = selectedTranslationPages.some((item) => String(item) === String(pageNumber));
+                return (
+                  <label key={pageNumber}>
+                    <input
+                      type="checkbox"
+                      checked={selected}
+                      disabled={translationLoading}
+                      onChange={() => setSelectedTranslationPages((current) =>
+                        selected
+                          ? current.filter((item) => String(item) !== String(pageNumber))
+                          : [...current, pageNumber]
+                      )}
+                    />
+                    Page {pageNumber}
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
           {translationError && (
             <div className="reader-translation-error" role="alert">{translationError}</div>
           )}
-          {translationProgress && translationSource === "Entire document" && (
+          {translationProgress && (translationSource === "Entire document" || translationSource.startsWith("Selected pages:")) && (
             <div className="reader-translation-status loading" role="status">{translationProgress}</div>
           )}
           {translation && (
             <div className="reader-translated-result" aria-live="polite">
               <div className="reader-translated-result-header">
-                <strong>{translationSource} · {translationLanguage}</strong>
+                <strong>{translationSource} · {translationResultLanguage}</strong>
               </div>
               {speechSupported && (
                 <button
@@ -2266,8 +2461,11 @@ function Reader({ documentId }) {
                   type="button"
                   onClick={readTranslatedText}
                 >
-                  Read translation aloud
+                  Read translation aloud in {translationResultLanguage}
                 </button>
+              )}
+              {speechLanguageError && (
+                <div className="reader-translation-error" role="alert">{speechLanguageError}</div>
               )}
               <div
                 className="reader-translated-text reader-translated-markdown"

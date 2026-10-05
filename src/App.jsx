@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import Home from "./components/Home";
 import Login from "./components/Login";
@@ -10,234 +10,104 @@ import Reader from "./components/Reader";
 import Processing from "./components/Processing";
 import StudyHub from "./components/StudyHub";
 import AIAssistant from "./components/AIAssistant";
+import Settings from "./components/Settings";
+import "./components/Theme.css";
+
+const SETTINGS_KEY = "dociq.settings";
+
+function getSavedTheme() {
+  try {
+    return JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}").theme || "system";
+  } catch {
+    return "system";
+  }
+}
+
+function getCurrentPage() {
+  const hash = window.location.hash;
+  if (hash === "#login") return "login";
+  if (hash === "#signup") return "signup";
+  if (hash === "#dashboard") return "dashboard";
+  if (hash === "#upload") return "upload";
+  if (hash === "#documents") return "documents";
+  if (hash.startsWith("#processing/")) return "processing";
+  if (hash.startsWith("#reader/")) return "reader";
+  if (hash.startsWith("#study/") || hash === "#study") return "study";
+  if (hash === "#assistant") return "assistant";
+  if (hash === "#settings") return "settings";
+  return "home";
+}
 
 function App() {
-  const getCurrentPage = () => {
-    const hash = window.location.hash;
-
-    if (hash === "#login") {
-      return "login";
-    }
-
-    if (hash === "#signup") {
-      return "signup";
-    }
-
-    if (hash === "#dashboard") {
-      return "dashboard";
-    }
-
-    if (hash === "#upload") {
-      return "upload";
-    }
-
-    if (hash === "#documents") {
-      return "documents";
-    }
-
-    if (hash.startsWith("#processing/")) {
-      return "processing";
-    }
-
-    if (hash.startsWith("#reader/")) {
-      return "reader";
-    }
-
-    if (hash.startsWith("#study/")) {
-      return "study";
-    }
-
-    if (hash === "#study") {
-      return "study";
-    }
-
-    if (hash === "#assistant") {
-      return "assistant";
-    }
-
-    if (hash === "#settings") {
-      return "settings";
-    }
-
-    return "home";
-  };
-
   const [page, setPage] = useState(getCurrentPage);
+  const [theme, setTheme] = useState(getSavedTheme);
+  const [systemDark, setSystemDark] = useState(() => window.matchMedia?.("(prefers-color-scheme: dark)").matches || false);
+  const resolvedTheme = theme === "system" ? (systemDark ? "dark" : "light") : theme;
 
   useEffect(() => {
-    const handleHashChange = () => {
-      setPage(getCurrentPage());
-    };
-
-    window.addEventListener(
-      "hashchange",
-      handleHashChange
-    );
-
-    return () => {
-      window.removeEventListener(
-        "hashchange",
-        handleHashChange
-      );
-    };
+    const handleHashChange = () => setPage(getCurrentPage());
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
 
-  /*
-   * Get the document ID from:
-   *
-   * #reader/123
-   *
-   * Result:
-   *
-   * 123
-   */
-  const getReaderDocumentId = () => {
-    const hash = window.location.hash;
+  useEffect(() => {
+    const media = window.matchMedia?.("(prefers-color-scheme: dark)");
+    if (!media) return undefined;
+    const update = (event) => setSystemDark(event.matches);
+    media.addEventListener?.("change", update);
+    return () => media.removeEventListener?.("change", update);
+  }, []);
 
-    if (!hash.startsWith("#reader/")) {
-      return null;
+  useEffect(() => {
+    document.documentElement.dataset.dociqTheme = resolvedTheme;
+    document.documentElement.style.colorScheme = resolvedTheme;
+  }, [resolvedTheme]);
+
+  useEffect(() => {
+    const syncTheme = (event) => setTheme(event.detail || getSavedTheme());
+    window.addEventListener("dociq-theme-change", syncTheme);
+    return () => window.removeEventListener("dociq-theme-change", syncTheme);
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme = resolvedTheme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    try {
+      const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...saved, theme: nextTheme }));
+    } catch {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify({ theme: nextTheme }));
     }
-
-    return hash.replace("#reader/", "");
+    window.dispatchEvent(new CustomEvent("dociq-theme-change", { detail: nextTheme }));
   };
 
-  const readerDocumentId = getReaderDocumentId();
+  const readerDocumentId = window.location.hash.startsWith("#reader/")
+    ? window.location.hash.replace("#reader/", "")
+    : null;
 
   return (
-    <div>
-
-      {/* ================= HOME ================= */}
-
+    <div className="dociq-app-root">
       {page === "home" && <Home />}
-
-
-      {/* ================= LOGIN ================= */}
-
       {page === "login" && <Login />}
-
-
-      {/* ================= SIGNUP ================= */}
-
       {page === "signup" && <Signup />}
-
-
-      {/* ================= DASHBOARD ================= */}
-
       {page === "dashboard" && <Dashboard />}
-
-
-      {/* ================= UPLOAD ================= */}
-
       {page === "upload" && <Upload />}
-
-
-      {/* ================= DOCUMENTS ================= */}
-
       {page === "documents" && <Documents />}
-
-
-      {/* ================= PROCESSING ================= */}
-
       {page === "processing" && <Processing />}
-
-
-      {/* ================= READER ================= */}
-
-      {page === "reader" && (
-        <Reader documentId={readerDocumentId} />
-      )}
-
-
-      {/* ================= STUDY HUB ================= */}
-
+      {page === "reader" && <Reader documentId={readerDocumentId} />}
       {page === "study" && <StudyHub />}
-
-
-      {/* ================= AI ASSISTANT ================= */}
-
       {page === "assistant" && <AIAssistant />}
-
-      {/* ================= SETTINGS ================= */}
-
-      {page === "settings" && (
-        <div
-          style={{
-            minHeight: "100vh",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "30px",
-            boxSizing: "border-box",
-            background: "#fffaf5",
-            color: "#30243b",
-            fontFamily:
-              '"Inter", "Segoe UI", sans-serif',
-            textAlign: "center",
-          }}
-        >
-          <div>
-            <div
-              style={{
-                width: "60px",
-                height: "60px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                margin: "0 auto 20px",
-                borderRadius: "16px",
-                background: "#f9e1d8",
-                color: "#4b254f",
-                fontSize: "25px",
-              }}
-            >
-              ⚙
-            </div>
-
-            <h1
-              style={{
-                margin: "0 0 10px",
-                color: "#4b254f",
-                fontSize: "24px",
-              }}
-            >
-              Settings
-            </h1>
-
-            <p
-              style={{
-                margin: "0 0 20px",
-                color: "#8f7d8b",
-                fontSize: "13px",
-              }}
-            >
-              Settings will be
-              added here next.
-            </p>
-
-            <button
-              type="button"
-              onClick={() => {
-                window.location.hash = "dashboard";
-              }}
-              style={{
-                marginTop: "5px",
-                padding: "11px 17px",
-                border: "none",
-                borderRadius: "9px",
-                background: "#4b254f",
-                color: "white",
-                cursor: "pointer",
-                fontFamily: "inherit",
-                fontSize: "11px",
-                fontWeight: 700,
-              }}
-            >
-              Back to Dashboard
-            </button>
-          </div>
-        </div>
-      )}
-
+      {page === "settings" && <Settings />}
+      <button
+        type="button"
+        className="global-theme-toggle"
+        onClick={toggleTheme}
+        aria-label={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} mode`}
+        title={`Switch to ${resolvedTheme === "dark" ? "light" : "dark"} mode`}
+      >
+        <span className="global-theme-toggle-icon" aria-hidden="true">{resolvedTheme === "dark" ? "☀" : "☾"}</span>
+        <span>{resolvedTheme === "dark" ? "Light mode" : "Dark mode"}</span>
+      </button>
     </div>
   );
 }

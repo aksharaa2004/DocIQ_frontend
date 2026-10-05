@@ -56,7 +56,7 @@ function Processing() {
         if (data.status === "failed") {
           clearInterval(intervalId);
           setError(
-            "DocIQ could not process this document."
+            data.message || "DocIQ could not process this document."
           );
         }
       } catch (error) {

@@ -403,7 +403,7 @@ function Upload() {
             href="#dashboard"
             className="dashboard-menu-item"
           >
-            <span>▦</span>
+            <span>🏠</span>
             Dashboard
           </a>
 
@@ -411,7 +411,7 @@ function Upload() {
             href="#documents"
             className="dashboard-menu-item"
           >
-            <span>▤</span>
+            <span>📄</span>
             My Documents
           </a>
 
@@ -419,7 +419,7 @@ function Upload() {
             href="#upload"
             className="dashboard-menu-item active"
           >
-            <span>↑</span>
+            <span>📤</span>
             Upload Document
           </a>
 
@@ -435,7 +435,7 @@ function Upload() {
             href="#assistant"
             className="dashboard-menu-item"
           >
-            <span>✦</span>
+            <span>🤖</span>
             AI Assistant
           </a>
 
@@ -443,7 +443,7 @@ function Upload() {
             href="#settings"
             className="dashboard-menu-item"
           >
-            <span>⚙</span>
+            <span>⚙️</span>
             Settings
           </a>
 

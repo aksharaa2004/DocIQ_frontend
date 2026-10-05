@@ -813,6 +813,8 @@ function StudyDocument({
     setDocument,
   ] = useState(null);
 
+  const [availableDocuments, setAvailableDocuments] = useState([]);
+
   const [
     loading,
     setLoading,
@@ -823,12 +825,7 @@ function StudyDocument({
     setError,
   ] = useState("");
 
-  const [
-    activeTab,
-    setActiveTab,
-  ] = useState(
-    initialTab || "keypoints"
-  );
+  const activeTab = initialTab || "keypoints";
 
 
   const [
@@ -845,6 +842,15 @@ function StudyDocument({
     examError,
     setExamError,
   ] = useState("");
+
+  const [shortNotes, setShortNotes] = useState([]);
+  const [generatingNotes, setGeneratingNotes] = useState(false);
+  const [notesError, setNotesError] = useState("");
+  const [flashcards, setFlashcards] = useState([]);
+  const [generatingFlashcards, setGeneratingFlashcards] = useState(false);
+  const [flashcardsError, setFlashcardsError] = useState("");
+  const [flashcardIndex, setFlashcardIndex] = useState(0);
+  const [showFlashcardAnswer, setShowFlashcardAnswer] = useState(false);
 
 
   const [
@@ -926,32 +932,34 @@ function StudyDocument({
 
   }, [documentId]);
 
-
-  // ====================================================
-  // SYNC TAB
-  // ====================================================
-
   useEffect(() => {
-
-    if (initialTab) {
-      setActiveTab(
-        initialTab
-      );
-    }
-
-  }, [initialTab]);
-
+    let active = true;
+    fetch("http://localhost:5000/api/documents")
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || "Unable to load document list.");
+        return Array.isArray(data.documents) ? data.documents : [];
+      })
+      .then((items) => {
+        if (active) setAvailableDocuments(items.filter((item) => item.status === "ready"));
+      })
+      .catch((error) => console.warn("Study Hub document selector could not load:", error.message));
+    return () => { active = false; };
+  }, []);
 
   // ====================================================
   // CHANGE TAB
   // ====================================================
 
   function changeTab(tab) {
-
-    setActiveTab(tab);
-
     window.location.hash =
       `#study/${documentId}/${tab}`;
+  }
+
+  function changeDocument(event) {
+    const nextDocumentId = event.target.value;
+    if (!nextDocumentId || nextDocumentId === documentId) return;
+    window.location.hash = `#study/${nextDocumentId}/${activeTab}`;
   }
 
 
@@ -1036,6 +1044,60 @@ function StudyDocument({
         false
       );
 
+    }
+  }
+
+  async function generateShortNotes() {
+    if (generatingNotes) return;
+    setGeneratingNotes(true);
+    setNotesError("");
+    setShortNotes([]);
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/ai/short-notes/${documentId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Unable to generate short notes.");
+      if (!Array.isArray(data.notes)) throw new Error("The AI returned notes in an unexpected format.");
+      setShortNotes(data.notes);
+    } catch (error) {
+      console.error("Short-note generation error:", error);
+      setNotesError(error.message || "Unable to generate short notes. Please try again.");
+    } finally {
+      setGeneratingNotes(false);
+    }
+  }
+
+  async function generateFlashcards() {
+    if (generatingFlashcards) return;
+    setGeneratingFlashcards(true);
+    setFlashcardsError("");
+    setFlashcards([]);
+    setFlashcardIndex(0);
+    setShowFlashcardAnswer(false);
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/ai/flashcards/${documentId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Unable to generate flashcards.");
+      if (!Array.isArray(data.flashcards) || !data.flashcards.length) {
+        throw new Error("The AI did not return any flashcards. Please try again.");
+      }
+      const validCards = data.flashcards.filter((card) =>
+        card && typeof card.question === "string" && typeof card.answer === "string"
+      );
+      if (!validCards.length) throw new Error("The AI returned flashcards in an unexpected format.");
+      setFlashcards(validCards);
+    } catch (error) {
+      console.error("Flashcard generation error:", error);
+      setFlashcardsError(error.message || "Unable to generate flashcards. Please try again.");
+    } finally {
+      setGeneratingFlashcards(false);
     }
   }
 
@@ -1279,9 +1341,26 @@ function StudyDocument({
         </div>
 
 
-        <div className="study-document-ready">
-          <span>✓</span>
-          Ready
+        <div className="study-document-controls">
+          <label htmlFor="study-document-select">Choose document</label>
+          <select
+            id="study-document-select"
+            value={documentId}
+            onChange={changeDocument}
+            disabled={generatingQuestions || generatingNotes || generatingFlashcards || evaluating}
+            aria-label="Choose a document for Study Hub tools"
+          >
+            {!availableDocuments.some((item) => item.id === documentId) && (
+              <option value={documentId}>{document.originalName}</option>
+            )}
+            {availableDocuments.map((item) => (
+              <option key={item.id} value={item.id}>{item.name}</option>
+            ))}
+          </select>
+          <div className="study-document-ready">
+            <span>✓</span>
+            Ready
+          </div>
         </div>
 
       </section>
@@ -1458,15 +1537,36 @@ function StudyDocument({
           </h2>
 
           <p>
-            Short revision notes
-            will be generated from
-            this document.
+            Generate concise revision notes from this document with Groq AI.
           </p>
 
-          <div className="study-coming-soon">
-            AI note generation is
-            ready to be connected.
-          </div>
+          <button
+            className="study-primary-button study-notes-generate"
+            type="button"
+            onClick={generateShortNotes}
+            disabled={generatingNotes}
+          >
+            {generatingNotes ? "Generating notes…" : shortNotes.length ? "Regenerate Short Notes" : "Generate Short Notes"}
+          </button>
+
+          {notesError && <div className="study-ai-error" role="alert">{notesError}</div>}
+
+          {generatingNotes && <div className="study-message"><span className="study-spinner">⟳</span> Groq is preparing your notes…</div>}
+
+          {shortNotes.length > 0 && (
+            <div className="study-short-notes">
+              {shortNotes.map((section, index) => (
+                <article className="study-short-note" key={`${section.heading}-${index}`}>
+                  <h3>{section.heading}</h3>
+                  <ul>
+                    {(Array.isArray(section.points) ? section.points : []).map((point, pointIndex) => (
+                      <li key={pointIndex}>{point}</li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
+            </div>
+          )}
 
         </section>
 
@@ -1948,15 +2048,50 @@ function StudyDocument({
           </h2>
 
           <p>
-            Important concepts can be
-            turned into quick revision
-            cards.
+            Review important concepts from this document with Groq-generated question-and-answer cards.
           </p>
 
-          <div className="study-coming-soon">
-            AI flashcard generation is
-            ready to be connected.
-          </div>
+          <button
+            className="study-primary-button study-notes-generate"
+            type="button"
+            onClick={generateFlashcards}
+            disabled={generatingFlashcards}
+          >
+            {generatingFlashcards ? "Generating flashcards…" : flashcards.length ? "Regenerate Flashcards" : "Generate Flashcards"}
+          </button>
+
+          {flashcardsError && <div className="study-ai-error" role="alert">{flashcardsError}</div>}
+          {generatingFlashcards && <div className="study-message"><span className="study-spinner">⟳</span> Groq is preparing your flashcards…</div>}
+
+          {flashcards.length > 0 && (
+            <div className="study-flashcard-review">
+              <div className="study-flashcard-count">Card {flashcardIndex + 1} of {flashcards.length}</div>
+              <button
+                className={`study-flashcard ${showFlashcardAnswer ? "show-answer" : ""}`}
+                type="button"
+                onClick={() => setShowFlashcardAnswer((visible) => !visible)}
+                aria-label={showFlashcardAnswer ? "Show flashcard question" : "Reveal flashcard answer"}
+              >
+                <span>{showFlashcardAnswer ? "ANSWER" : "QUESTION"}</span>
+                <strong>{showFlashcardAnswer ? flashcards[flashcardIndex].answer : flashcards[flashcardIndex].question}</strong>
+                <small>{showFlashcardAnswer ? "Click to see the question" : "Click to reveal the answer"}</small>
+              </button>
+              <div className="study-flashcard-controls">
+                <button
+                  type="button"
+                  className="study-flashcard-nav"
+                  onClick={() => { setFlashcardIndex((index) => Math.max(0, index - 1)); setShowFlashcardAnswer(false); }}
+                  disabled={flashcardIndex === 0}
+                >← Previous</button>
+                <button
+                  type="button"
+                  className="study-flashcard-nav"
+                  onClick={() => { setFlashcardIndex((index) => Math.min(flashcards.length - 1, index + 1)); setShowFlashcardAnswer(false); }}
+                  disabled={flashcardIndex === flashcards.length - 1}
+                >Next →</button>
+              </div>
+            </div>
+          )}
 
         </section>
 
@@ -2055,6 +2190,7 @@ export default function StudyHub() {
       {documentId ? (
 
         <StudyDocument
+          key={documentId}
           documentId={
             documentId
           }

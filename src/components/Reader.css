@@ -1117,6 +1117,59 @@
   flex-wrap: wrap;
 }
 
+.reader-translation-page-picker {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #eaded9;
+  border-radius: 8px;
+  background: #fffdfb;
+}
+
+.reader-translation-page-picker-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  color: #4b254f;
+  font-size: 12px;
+}
+
+.reader-translation-page-picker-heading button {
+  border: 0;
+  background: transparent;
+  color: #74456f;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.reader-translation-page-picker-heading button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.reader-translation-page-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  max-height: 128px;
+  overflow-y: auto;
+}
+
+.reader-translation-page-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #5d4a5e;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.reader-translation-page-options input {
+  accent-color: #70426d;
+}
+
 .reader-translation-select {
   height: 36px;
   min-width: 180px;

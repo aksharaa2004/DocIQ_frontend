@@ -6,24 +6,74 @@ import "./Upload.css";
 import "./AIAssistant.css";
 
 const API_BASE_URL = "http://localhost:5000";
+const makeWelcomeMessage = (documentId = "") => ({
+  key: "welcome",
+  role: "assistant",
+  content: documentId
+    ? "I’ll answer using the selected document. What would you like to know?"
+    : "Hi! I’m your DocIQ study assistant. Ask me anything, or paste a concept you’d like explained.",
+});
+
+const createConversation = (documentId = "", documentName = "") => ({
+  id: `chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  title: "New chat",
+  documentId,
+  documentName,
+  updatedAt: new Date().toISOString(),
+  messages: [makeWelcomeMessage(documentId)],
+});
 
 export default function AIAssistant() {
   const userName = localStorage.getItem("userName") || "Student";
-  const [messages, setMessages] = useState([
-    {
-      key: "welcome",
-      role: "assistant",
-      content: "Hi! I’m your DocIQ study assistant. Ask me anything, or paste a concept you’d like explained.",
-    },
-  ]);
+  const historyStorageKey = `dociq-assistant-history:${userName.toLowerCase()}`;
+  const [initialConversations] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(historyStorageKey) || "[]");
+      const valid = Array.isArray(saved)
+        ? saved.filter((item) => item?.id && Array.isArray(item.messages) && item.messages.some((message) => message.role === "user"))
+        : [];
+      return valid;
+    } catch {
+      return [];
+    }
+  });
+  const [conversations, setConversations] = useState(initialConversations);
+  const [currentConversationId, setCurrentConversationId] = useState(initialConversations[0]?.id || createConversation().id);
+  const currentConversation = conversations.find((item) => item.id === currentConversationId);
+  const [messages, setMessages] = useState(() => currentConversation?.messages || [makeWelcomeMessage()]);
   const [loading, setLoading] = useState(false);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState("");
   const [documents, setDocuments] = useState([]);
-  const [selectedDocumentId, setSelectedDocumentId] = useState("");
+  const [selectedDocumentId, setSelectedDocumentId] = useState(() => currentConversation?.documentId || "");
   const [documentsLoading, setDocumentsLoading] = useState(true);
   const [documentsError, setDocumentsError] = useState("");
   const scrollRef = useRef(null);
+  const conversationsRef = useRef(initialConversations);
+  const selectedDocumentNameRef = useRef(currentConversation?.documentName || "");
+
+  useEffect(() => {
+    const firstUserMessage = messages.find((message) => message.role === "user")?.content;
+    if (!firstUserMessage) return;
+    const conversation = {
+      id: currentConversationId,
+      title: firstUserMessage ? `${firstUserMessage.slice(0, 42)}${firstUserMessage.length > 42 ? "…" : ""}` : "New chat",
+      documentId: selectedDocumentId,
+      documentName: selectedDocumentNameRef.current || currentConversation?.documentName || "",
+      updatedAt: new Date().toISOString(),
+      messages,
+    };
+    const updated = [conversation, ...conversationsRef.current.filter((item) => item.id !== currentConversationId)]
+      .filter((item) => item.id)
+      .slice(0, 50);
+    conversationsRef.current = updated;
+    setConversations(updated);
+    try {
+      localStorage.setItem(historyStorageKey, JSON.stringify(updated));
+    } catch (storageError) {
+      console.warn("Could not save assistant chat history:", storageError);
+    }
+  }, [messages, selectedDocumentId, currentConversationId, currentConversation?.documentName, historyStorageKey]);
 
   useEffect(() => {
     let active = true;
@@ -93,6 +143,29 @@ export default function AIAssistant() {
     }
   };
 
+  const startNewConversation = (documentId = "") => {
+    const documentName = documents.find((document) => document.id === documentId)?.name || "";
+    const conversation = createConversation(documentId, documentName);
+    selectedDocumentNameRef.current = documentName;
+    setCurrentConversationId(conversation.id);
+    selectedDocumentNameRef.current = conversation.documentName || documents.find((document) => document.id === conversation.documentId)?.name || "";
+    setSelectedDocumentId(documentId);
+    setMessages(conversation.messages);
+    setError("");
+  };
+
+  const openConversation = (conversationId) => {
+    const conversation = conversations.find((item) => item.id === conversationId);
+    if (!conversation) return;
+    setCurrentConversationId(conversation.id);
+    setSelectedDocumentId(conversation.documentId || "");
+    setMessages(conversation.messages);
+    setError("");
+  };
+
+  const getConversationContext = (conversation) =>
+    conversation.documentName || documents.find((document) => document.id === conversation.documentId)?.name || "General chat";
+
   return (
     <div className="upload-page assistant-layout">
       <aside className="dashboard-sidebar">
@@ -102,12 +175,12 @@ export default function AIAssistant() {
         </a>
         <div className="dashboard-menu-title">MAIN MENU</div>
         <nav className="dashboard-menu">
-          <a href="#dashboard" className="dashboard-menu-item"><span>▦</span>Dashboard</a>
-          <a href="#documents" className="dashboard-menu-item"><span>▤</span>My Documents</a>
-          <a href="#upload" className="dashboard-menu-item"><span>↑</span>Upload Document</a>
+          <a href="#dashboard" className="dashboard-menu-item"><span>🏠</span>Dashboard</a>
+          <a href="#documents" className="dashboard-menu-item"><span>📄</span>My Documents</a>
+          <a href="#upload" className="dashboard-menu-item"><span>📤</span>Upload Document</a>
           <a href="#study" className="dashboard-menu-item"><span>🎓</span>Study Hub</a>
-          <a href="#assistant" className="dashboard-menu-item active"><span>✦</span>AI Assistant</a>
-          <a href="#settings" className="dashboard-menu-item"><span>⚙</span>Settings</a>
+          <a href="#assistant" className="dashboard-menu-item active"><span>🤖</span>AI Assistant</a>
+          <a href="#settings" className="dashboard-menu-item"><span>⚙️</span>Settings</a>
         </nav>
         <div className="dashboard-sidebar-bottom">
           <div className="dashboard-help-card">
@@ -163,10 +236,9 @@ export default function AIAssistant() {
           <select
             id="assistant-document"
             value={selectedDocumentId}
+            disabled={loading}
             onChange={(event) => {
-              setSelectedDocumentId(event.target.value);
-              setMessages([{ key: "welcome", role: "assistant", content: event.target.value ? "I’ll answer using the selected document. What would you like to know?" : "Hi! I’m your DocIQ study assistant. Ask me anything, or paste a concept you’d like explained." }]);
-              setError("");
+              startNewConversation(event.target.value);
             }}
           >
             <option value="">General study chat</option>
@@ -191,6 +263,35 @@ export default function AIAssistant() {
           )}
           {selectedDocumentId && <span>Extracted text and OCR results are sent to Groq to answer your questions.</span>}
         </div>
+        <div className="assistant-history-toolbar">
+          <label htmlFor="assistant-chat-history">Chat history</label>
+          <select
+            id="assistant-chat-history"
+            value={conversations.some((conversation) => conversation.id === currentConversationId) ? currentConversationId : ""}
+            onChange={(event) => openConversation(event.target.value)}
+            aria-label="Open a saved assistant conversation"
+            disabled={loading}
+          >
+            {!conversations.some((conversation) => conversation.id === currentConversationId) && (
+              <option value="" disabled>
+                {conversations.length ? "New chat (not saved yet)" : "No saved chats yet"}
+              </option>
+            )}
+            {conversations.map((conversation) => (
+              <option key={conversation.id} value={conversation.id}>
+                {getConversationContext(conversation)} — {conversation.title || "New chat"}
+              </option>
+            ))}
+          </select>
+          <span className="assistant-history-context">
+            {currentConversation
+              ? `This chat: ${getConversationContext(currentConversation)}`
+              : `New chat${selectedDocumentId ? `: ${documents.find((document) => document.id === selectedDocumentId)?.name || "selected document"}` : " · not saved yet"}`}
+          </span>
+          <button type="button" onClick={() => startNewConversation(selectedDocumentId)} disabled={loading}>
+            + New chat
+          </button>
+        </div>
         <div className="assistant-messages" ref={scrollRef}>
           <Bubble.List
             items={messages.map(({ key, role, content }) => ({
@@ -205,7 +306,7 @@ export default function AIAssistant() {
                 />
               ) : content,
             }))}
-            roles={{
+            role={{
               user: { placement: "end", variant: "filled", shape: "round" },
               assistant: { placement: "start", variant: "filled", shape: "round" },
             }}
