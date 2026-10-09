@@ -949,8 +949,8 @@
 .study-content-card > p {
   margin: 0;
   color: #827481;
-  font-size: 12px;
-  line-height: 1.6;
+  font-size: 16px;
+  line-height: 1.7;
 }
 
 
@@ -983,15 +983,15 @@
 .study-short-note h3 {
   margin: 0 0 10px;
   color: #4b254f;
-  font-size: 14px;
+  font-size: 17px;
 }
 
 .study-short-note ul {
   margin: 0;
   padding-left: 19px;
-  color: #665968;
-  font-size: 13px;
-  line-height: 1.7;
+  color: #504655;
+  font-size: 20px;
+  line-height: 1.8;
 }
 
 .study-short-note li + li {
@@ -1092,7 +1092,7 @@
 
 .study-document-text-preview h3 {
   margin: 0 0 15px;
-  font-size: 14px;
+  font-size: 18px;
 }
 
 
@@ -1113,12 +1113,12 @@
 
 
 .study-page-preview p {
-  max-height: 130px;
+  max-height: 260px;
   margin: 8px 0 0;
   overflow: hidden;
   color: #6f626e;
-  font-size: 11px;
-  line-height: 1.7;
+  font-size: 18px;
+  line-height: 1.75;
 }
 
 

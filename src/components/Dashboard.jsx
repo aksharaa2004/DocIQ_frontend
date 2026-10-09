@@ -1,17 +1,41 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./Dashboard.css";
 
 function Dashboard() {
   const userName = localStorage.getItem("userName") || "Student";
+  const isAdmin = localStorage.getItem("userRole") === "admin";
+  const recentDocumentsKey = `recentDocuments:${(localStorage.getItem("userEmail") || "").trim().toLowerCase() || "anonymous"}`;
 
   // Read documents saved from your Upload page
-  const [recentFiles] = useState(() => {
+  const [recentFiles, setRecentFiles] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem("recentDocuments")) || [];
+      return JSON.parse(localStorage.getItem(recentDocumentsKey)) || [];
     } catch {
       return [];
     }
   });
+
+  useEffect(() => {
+    let active = true;
+    fetch("http://localhost:5000/api/documents", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+      },
+    })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || "Unable to load documents.");
+        return Array.isArray(data.documents) ? data.documents : [];
+      })
+      .then((documents) => {
+        if (!active) return;
+        setRecentFiles(documents);
+        localStorage.setItem(recentDocumentsKey, JSON.stringify(documents.slice(0, 10)));
+      })
+      .catch(() => {});
+
+    return () => { active = false; };
+  }, [recentDocumentsKey]);
 
   // Navigate using the existing hash-based routing
   const navigateTo = (path) => {
@@ -21,7 +45,9 @@ function Dashboard() {
   // Logout
   const handleLogout = () => {
     localStorage.removeItem("userName");
+    localStorage.removeItem("userEmail");
     localStorage.removeItem("token");
+    localStorage.removeItem("userRole");
     navigateTo("home");
   };
 
@@ -162,6 +188,13 @@ function Dashboard() {
             <span>⚙️</span>
             Settings
           </a>
+
+          {isAdmin && (
+            <a href="#admin" className="dashboard-menu-item">
+              <span>🛡️</span>
+              Admin
+            </a>
+          )}
 
         </nav>
 
@@ -633,65 +666,37 @@ function Dashboard() {
 
               </button>
 
-              {/* AI Summarization */}
+            
 
-              <button
-                className="quick-action-item"
-                type="button"
-                onClick={openFirstDocument}
-              >
+            {/* Ask AI */}
 
-                <span className="quick-action-icon summary-action">
-                  ✦
-                </span>
+<button
+  className="quick-action-item"
+  type="button"
+  onClick={() => navigateTo("assistant")}
+>
 
-                <span>
+  <span className="quick-action-icon question-action">
+    ?
+  </span>
 
-                  <strong>
-                    AI Summarization
-                  </strong>
+  <span>
 
-                  <small>
-                    Understand documents quickly
-                  </small>
+    <strong>
+      Ask AI Assistant
+    </strong>
 
-                </span>
+    <small>
+      Ask questions from documents
+    </small>
 
-                <b>
-                  →
-                </b>
+  </span>
 
-              </button>
+  <b>
+    →
+  </b>
 
-              {/* Ask AI */}
-
-              <button
-                className="quick-action-item"
-                type="button"
-                onClick={openFirstDocument}
-              >
-
-                <span className="quick-action-icon question-action">
-                  ?
-                </span>
-
-                <span>
-
-                  <strong>
-                    Ask AI Assistant
-                  </strong>
-
-                  <small>
-                    Ask questions from documents
-                  </small>
-
-                </span>
-
-                <b>
-                  →
-                </b>
-
-              </button>
+</button>
 
               {/* Translate */}
 

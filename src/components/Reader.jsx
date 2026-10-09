@@ -10,6 +10,7 @@ import DOMPurify from "dompurify";
 import "./Reader.css";
 
 const API_BASE_URL = "http://localhost:5000";
+
 const SPEECH_LANGUAGE_CODES = {
   English: "en-IN",
   Hindi: "hi-IN",
@@ -48,7 +49,9 @@ function Reader({ documentId }) {
 
   const [documentData, setDocumentData] = useState(null);
   const [loading, setLoading] = useState(Boolean(documentId));
-  const [error, setError] = useState(documentId ? "" : "No document was selected.");
+  const [error, setError] = useState(
+    documentId ? "" : "No document was selected."
+  );
 
   // =========================================================
   // SEARCH
@@ -64,7 +67,75 @@ function Reader({ documentId }) {
   const [zoom, setZoom] = useState(100);
   const [bookmarks, setBookmarks] = useState([]);
   const [highlights, setHighlights] = useState([]);
+  const selectionInfoRef = useRef(null);
+  const [selectionHighlightPosition, setSelectionHighlightPosition] =
+    useState(null);
   const [bookmarkError, setBookmarkError] = useState("");
+
+  useEffect(() => {
+    const dismissSelectionHighlight = (event) => {
+      if (
+        event?.target?.closest?.(
+          ".reader-selection-highlight-action, .reader-highlight-button"
+        )
+      ) {
+        return;
+      }
+
+      selectionInfoRef.current = null;
+      setSelectionHighlightPosition(null);
+    };
+
+    const handleSelectionChange = () => {
+      const selection = window.getSelection();
+
+      if (
+        !selection ||
+        selection.isCollapsed ||
+        !selection.toString().trim()
+      ) {
+        setSelectionHighlightPosition(null);
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        dismissSelectionHighlight();
+      }
+    };
+
+    document.addEventListener(
+      "pointerdown",
+      dismissSelectionHighlight
+    );
+
+    document.addEventListener(
+      "selectionchange",
+      handleSelectionChange
+    );
+
+    document.addEventListener(
+      "keydown",
+      handleKeyDown
+    );
+
+    return () => {
+      document.removeEventListener(
+        "pointerdown",
+        dismissSelectionHighlight
+      );
+
+      document.removeEventListener(
+        "selectionchange",
+        handleSelectionChange
+      );
+
+      document.removeEventListener(
+        "keydown",
+        handleKeyDown
+      );
+    };
+  }, []);
 
   // =========================================================
   // TTS STATE
@@ -82,14 +153,35 @@ function Reader({ documentId }) {
   const [speechLanguageError, setSpeechLanguageError] = useState("");
   const [speechSource, setSpeechSource] = useState("");
   const [currentPageNumber, setCurrentPageNumber] = useState(1);
-  const [translationLanguage, setTranslationLanguage] = useState("English");
-  const [translationResultLanguage, setTranslationResultLanguage] = useState("English");
+
+  // =========================================================
+  // TRANSLATION STATE
+  // =========================================================
+
+  const [translationLanguage, setTranslationLanguage] =
+    useState("English");
+
+  const [translationResultLanguage, setTranslationResultLanguage] =
+    useState("English");
+
   const [translation, setTranslation] = useState("");
-  const [selectedTranslationPages, setSelectedTranslationPages] = useState([]);
+
+  const [selectedTranslationPages, setSelectedTranslationPages] =
+    useState([]);
+
   const [translationSource, setTranslationSource] = useState("");
-  const [translationLoading, setTranslationLoading] = useState(false);
-  const [translationError, setTranslationError] = useState("");
-  const [translationProgress, setTranslationProgress] = useState("");
+
+  const [translationLoading, setTranslationLoading] =
+    useState(false);
+
+  const [translationError, setTranslationError] =
+    useState("");
+
+  const [translationProgress, setTranslationProgress] =
+    useState("");
+
+  const [showTranslationResult, setShowTranslationResult] =
+    useState(false);
 
   // =========================================================
   // REFS
@@ -101,6 +193,7 @@ function Reader({ documentId }) {
   const speechRateRef = useRef(1);
   const selectedVoiceRef = useRef("");
   const speechLanguageRef = useRef("");
+
   const generatedAudioRef = useRef(null);
   const generatedAudioUrlRef = useRef("");
   const generatedSpeechRef = useRef(false);
@@ -227,7 +320,12 @@ function Reader({ documentId }) {
 
       try {
         const response = await fetch(
-          `${API_BASE_URL}/api/documents/${documentId}`
+          `${API_BASE_URL}/api/documents/${documentId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+            },
+          }
         );
 
         if (!response.ok) {
@@ -348,8 +446,15 @@ function Reader({ documentId }) {
       if (speechSupported) {
         window.speechSynthesis.cancel();
       }
+
       generatedAudioRef.current?.pause();
-      if (generatedAudioUrlRef.current) URL.revokeObjectURL(generatedAudioUrlRef.current);
+
+      if (generatedAudioUrlRef.current) {
+        URL.revokeObjectURL(
+          generatedAudioUrlRef.current
+        );
+      }
+
       generatedAudioUrlRef.current = "";
       generatedSpeechRef.current = false;
 
@@ -525,22 +630,48 @@ function Reader({ documentId }) {
     utterance.rate =
       speechRateRef.current;
 
-    const requestedLanguage = speechLanguageRef.current;
+    const requestedLanguage =
+      speechLanguageRef.current;
+
     if (requestedLanguage) {
-      utterance.lang = requestedLanguage;
-      const baseLanguage = requestedLanguage.split("-")[0].toLowerCase();
-      const matchingVoice = voices.find(
-        (voice) => voice.lang?.toLowerCase() === requestedLanguage.toLowerCase()
-      ) || voices.find(
-        (voice) => {
-          const voiceLanguage = voice.lang?.toLowerCase();
-          return voiceLanguage === baseLanguage || voiceLanguage?.startsWith(`${baseLanguage}-`);
-        }
-      );
-      if (matchingVoice) utterance.voice = matchingVoice;
+      utterance.lang =
+        requestedLanguage;
+
+      const baseLanguage =
+        requestedLanguage
+          .split("-")[0]
+          .toLowerCase();
+
+      const matchingVoice =
+        voices.find(
+          (voice) =>
+            voice.lang?.toLowerCase() ===
+            requestedLanguage.toLowerCase()
+        ) ||
+        voices.find((voice) => {
+          const voiceLanguage =
+            voice.lang?.toLowerCase();
+
+          return (
+            voiceLanguage === baseLanguage ||
+            voiceLanguage?.startsWith(
+              `${baseLanguage}-`
+            )
+          );
+        });
+
+      if (matchingVoice) {
+        utterance.voice =
+          matchingVoice;
+      }
     } else {
-      const voiceName = selectedVoiceRef.current;
-      const voice = voices.find((item) => item.name === voiceName);
+      const voiceName =
+        selectedVoiceRef.current;
+
+      const voice = voices.find(
+        (item) => item.name === voiceName
+      );
+
       if (voice) {
         utterance.voice = voice;
         utterance.lang = voice.lang;
@@ -578,70 +709,175 @@ function Reader({ documentId }) {
   };
 
   // =========================================================
-  // START SPEECH
+  // GENERATED MALAYALAM SPEECH
   // =========================================================
 
-  const playGeneratedMalayalamChunk = async (chunks, index) => {
-    if (!speechActiveRef.current) return;
-    if (index >= chunks.length) {
-      speechActiveRef.current = false;
-      generatedSpeechRef.current = false;
-      setSpeechStatus("idle");
-      setSpeechSource("");
-      return;
-    }
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/reader/speech`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: chunks[index], language: "Malayalam" }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Could not generate Malayalam speech.");
-      if (!speechActiveRef.current) return;
-      const audioBytes = Uint8Array.from(atob(data.audioBase64), (char) => char.charCodeAt(0));
-      const audioBlob = new Blob([audioBytes], { type: data.mimeType || "audio/wav" });
-      if (generatedAudioUrlRef.current) URL.revokeObjectURL(generatedAudioUrlRef.current);
-      generatedAudioUrlRef.current = URL.createObjectURL(audioBlob);
-      const audio = new Audio(generatedAudioUrlRef.current);
-      generatedAudioRef.current = audio;
-      audio.onended = () => playGeneratedMalayalamChunk(chunks, index + 1);
-      audio.onerror = () => {
+  const playGeneratedMalayalamChunk =
+    async (chunks, index) => {
+      if (!speechActiveRef.current) {
+        return;
+      }
+
+      if (index >= chunks.length) {
         speechActiveRef.current = false;
         generatedSpeechRef.current = false;
         setSpeechStatus("idle");
-        setSpeechLanguageError("Generated Malayalam audio could not be played by this browser.");
-      };
-      await audio.play();
-      setSpeechStatus("speaking");
-    } catch (error) {
-      speechActiveRef.current = false;
-      generatedSpeechRef.current = false;
-      setSpeechStatus("idle");
-      setSpeechSource("");
-      setSpeechLanguageError(error.message || "Could not generate Malayalam speech.");
-    }
-  };
-
-  const startGeneratedMalayalamSpeech = (text, source) => {
-    const chunks = splitTextIntoChunks(text).flatMap((chunk) => {
-      const parts = [];
-      for (let offset = 0; offset < chunk.length; offset += 2600) {
-        parts.push(chunk.slice(offset, offset + 2600));
+        setSpeechSource("");
+        return;
       }
-      return parts;
-    });
-    if (!chunks.length) return;
-    window.speechSynthesis.cancel();
-    generatedAudioRef.current?.pause();
-    if (generatedAudioUrlRef.current) URL.revokeObjectURL(generatedAudioUrlRef.current);
-    speechActiveRef.current = true;
-    generatedSpeechRef.current = true;
-    setSpeechLanguageError("");
-    setSpeechSource(source);
-    setSpeechStatus("speaking");
-    playGeneratedMalayalamChunk(chunks, 0);
-  };
+
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/reader/speech`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body: JSON.stringify({
+              text: chunks[index],
+              language: "Malayalam",
+            }),
+          }
+        );
+
+        const data =
+          await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.message ||
+              "Could not generate Malayalam speech."
+          );
+        }
+
+        if (!speechActiveRef.current) {
+          return;
+        }
+
+        const audioBytes =
+          Uint8Array.from(
+            atob(data.audioBase64),
+            (char) =>
+              char.charCodeAt(0)
+          );
+
+        const audioBlob =
+          new Blob(
+            [audioBytes],
+            {
+              type:
+                data.mimeType ||
+                "audio/wav",
+            }
+          );
+
+        if (generatedAudioUrlRef.current) {
+          URL.revokeObjectURL(
+            generatedAudioUrlRef.current
+          );
+        }
+
+        generatedAudioUrlRef.current =
+          URL.createObjectURL(
+            audioBlob
+          );
+
+        const audio =
+          new Audio(
+            generatedAudioUrlRef.current
+          );
+
+        generatedAudioRef.current =
+          audio;
+
+        audio.onended = () =>
+          playGeneratedMalayalamChunk(
+            chunks,
+            index + 1
+          );
+
+        audio.onerror = () => {
+          speechActiveRef.current = false;
+          generatedSpeechRef.current = false;
+          setSpeechStatus("idle");
+
+          setSpeechLanguageError(
+            "Generated Malayalam audio could not be played by this browser."
+          );
+        };
+
+        await audio.play();
+
+        setSpeechStatus("speaking");
+      } catch (error) {
+        speechActiveRef.current = false;
+        generatedSpeechRef.current = false;
+        setSpeechStatus("idle");
+        setSpeechSource("");
+
+        setSpeechLanguageError(
+          error.message ||
+            "Could not generate Malayalam speech."
+        );
+      }
+    };
+
+  const startGeneratedMalayalamSpeech =
+    (text, source) => {
+      const chunks =
+        splitTextIntoChunks(text).flatMap(
+          (chunk) => {
+            const parts = [];
+
+            for (
+              let offset = 0;
+              offset < chunk.length;
+              offset += 2600
+            ) {
+              parts.push(
+                chunk.slice(
+                  offset,
+                  offset + 2600
+                )
+              );
+            }
+
+            return parts;
+          }
+        );
+
+      if (!chunks.length) {
+        return;
+      }
+
+      window.speechSynthesis.cancel();
+
+      generatedAudioRef.current?.pause();
+
+      if (generatedAudioUrlRef.current) {
+        URL.revokeObjectURL(
+          generatedAudioUrlRef.current
+        );
+      }
+
+      speechActiveRef.current = true;
+      generatedSpeechRef.current = true;
+
+      setSpeechLanguageError("");
+      setSpeechSource(source);
+      setSpeechStatus("speaking");
+
+      playGeneratedMalayalamChunk(
+        chunks,
+        0
+      );
+    };
+
+  // =========================================================
+  // START SPEECH
+  // =========================================================
 
   const startSpeech = (
     text,
@@ -657,34 +893,66 @@ function Reader({ documentId }) {
     }
 
     generatedAudioRef.current?.pause();
-    if (generatedAudioUrlRef.current) URL.revokeObjectURL(generatedAudioUrlRef.current);
+
+    if (generatedAudioUrlRef.current) {
+      URL.revokeObjectURL(
+        generatedAudioUrlRef.current
+      );
+    }
+
     generatedAudioUrlRef.current = "";
     generatedSpeechRef.current = false;
 
-    const requestedLanguage = SPEECH_LANGUAGE_CODES[language] || "";
+    const requestedLanguage =
+      SPEECH_LANGUAGE_CODES[language] ||
+      "";
+
     if (requestedLanguage) {
-      const baseLanguage = requestedLanguage.split("-")[0].toLowerCase();
-      const matchingVoice = voices.find(
-        (voice) => voice.lang?.toLowerCase() === requestedLanguage.toLowerCase()
-      ) || voices.find(
-        (voice) => {
-          const voiceLanguage = voice.lang?.toLowerCase();
-          return voiceLanguage === baseLanguage || voiceLanguage?.startsWith(`${baseLanguage}-`);
-        }
-      );
-      if (!matchingVoice && language === "Malayalam") {
-        startGeneratedMalayalamSpeech(text, source);
+      const baseLanguage =
+        requestedLanguage
+          .split("-")[0]
+          .toLowerCase();
+
+      const matchingVoice =
+        voices.find(
+          (voice) =>
+            voice.lang?.toLowerCase() ===
+            requestedLanguage.toLowerCase()
+        ) ||
+        voices.find((voice) => {
+          const voiceLanguage =
+            voice.lang?.toLowerCase();
+
+          return (
+            voiceLanguage === baseLanguage ||
+            voiceLanguage?.startsWith(
+              `${baseLanguage}-`
+            )
+          );
+        });
+
+      if (
+        !matchingVoice &&
+        language === "Malayalam"
+      ) {
+        startGeneratedMalayalamSpeech(
+          text,
+          source
+        );
         return;
       }
+
       if (!matchingVoice) {
         setSpeechLanguageError(
           `No ${language} speech voice is available in this browser or on this device. Add a ${language} text-to-speech voice in your device settings, then reload the reader.`
         );
+
         return;
       }
     }
 
     window.speechSynthesis.cancel();
+
     setSpeechLanguageError("");
 
     const chunks =
@@ -694,10 +962,15 @@ function Reader({ documentId }) {
       return;
     }
 
-    speechQueueRef.current = chunks;
+    speechQueueRef.current =
+      chunks;
+
     speechIndexRef.current = 0;
     speechActiveRef.current = true;
-    speechLanguageRef.current = SPEECH_LANGUAGE_CODES[language] || "";
+
+    speechLanguageRef.current =
+      SPEECH_LANGUAGE_CODES[language] ||
+      "";
 
     setSpeechSource(source);
     setSpeechStatus("speaking");
@@ -716,14 +989,16 @@ function Reader({ documentId }) {
       (item, index) =>
         Number(
           getPageNumber(item, index)
-        ) === Number(currentPageNumber)
+        ) ===
+        Number(currentPageNumber)
     );
 
     if (!page) {
       return;
     }
 
-    const text = getPageText(page);
+    const text =
+      getPageText(page);
 
     startSpeech(
       text,
@@ -762,132 +1037,399 @@ function Reader({ documentId }) {
     );
   };
 
+  // =========================================================
+  // READ TRANSLATED TEXT
+  // =========================================================
+
   const readTranslatedText = () => {
-    if (!translation || !speechSupported) return;
-    const container = document.createElement("div");
-    container.innerHTML = DOMPurify.sanitize(marked.parse(translation));
+    if (
+      !translation ||
+      !speechSupported
+    ) {
+      return;
+    }
+
+    const container =
+      document.createElement("div");
+
+    container.innerHTML =
+      DOMPurify.sanitize(
+        marked.parse(translation)
+      );
+
     startSpeech(
-      container.textContent || container.innerText || "",
+      container.textContent ||
+        container.innerText ||
+        "",
       `translation in ${translationResultLanguage}`,
       translationResultLanguage
     );
   };
 
-  const translateText = async (source) => {
-    const targetLanguage = translationLanguage;
+  // =========================================================
+  // TRANSLATE
+  // =========================================================
+
+  const translateText = async (
+    source
+  ) => {
+    const targetLanguage =
+      translationLanguage;
+
     let text;
     let sourceLabel;
     let sections = [];
 
+    // -------------------------------------------------------
+    // SELECTED TEXT
+    // -------------------------------------------------------
+
     if (source === "selection") {
-      text = window.getSelection()?.toString().trim() || "";
+      text =
+        window
+          .getSelection()
+          ?.toString()
+          .trim() || "";
+
       sourceLabel = "Selected text";
+
       if (text) {
         const chunks = [];
-        for (let offset = 0; offset < text.length; offset += 2500) {
-          chunks.push(text.slice(offset, offset + 2500));
-        }
-        sections = chunks.map((chunk, index) => ({
-          label: chunks.length > 1 ? `${sourceLabel} (part ${index + 1}/${chunks.length})` : sourceLabel,
-          text: chunk,
-        }));
-      }
-    } else if (source === "document") {
-      sourceLabel = "Entire document";
-      sections = [
-        { label: "Document title", text: documentTitle },
-        ...pages.flatMap((page, index) => {
-        const pageNumber = getPageNumber(page, index);
-        const pageText = getPageText(page).trim();
-        if (!pageText) return [];
 
-        const chunks = [];
-        for (let offset = 0; offset < pageText.length; offset += 2500) {
-          chunks.push(pageText.slice(offset, offset + 2500));
+        for (
+          let offset = 0;
+          offset < text.length;
+          offset += 2500
+        ) {
+          chunks.push(
+            text.slice(
+              offset,
+              offset + 2500
+            )
+          );
         }
-        return chunks.map((chunk, chunkIndex) => ({
-          label: chunks.length > 1
-            ? `Page ${pageNumber} (part ${chunkIndex + 1}/${chunks.length})`
-            : `Page ${pageNumber}`,
-          text: chunk,
-        }));
-        }),
-      ];
-    } else if (source === "pages") {
-      const selectedPageSet = new Set(selectedTranslationPages.map(String));
-      const chosenPages = pages.filter((page, index) =>
-        selectedPageSet.has(String(getPageNumber(page, index)))
-      );
-      sourceLabel = `Selected pages: ${chosenPages.map((page) =>
-        getPageNumber(page, pages.indexOf(page))
-      ).join(", ")}`;
-      sections = chosenPages.flatMap((page) => {
-        const pageNumber = getPageNumber(page, pages.indexOf(page));
-        const pageText = getPageText(page).trim();
-        if (!pageText) return [];
-        const chunks = [];
-        for (let offset = 0; offset < pageText.length; offset += 2500) {
-          chunks.push(pageText.slice(offset, offset + 2500));
-        }
-        return chunks.map((chunk, chunkIndex) => ({
-          label: chunks.length > 1 ? `Page ${pageNumber} (part ${chunkIndex + 1}/${chunks.length})` : `Page ${pageNumber}`,
-          text: chunk,
-        }));
-      });
-    } else {
-      const page = pages.find(
-        (item, index) =>
-          Number(getPageNumber(item, index)) === Number(currentPageNumber)
-      );
-      text = getPageText(page).trim();
-      sourceLabel = `Page ${currentPageNumber}`;
-      if (text) sections = [{ label: sourceLabel, text }];
+
+        sections = chunks.map(
+          (chunk, index) => ({
+            label:
+              chunks.length > 1
+                ? `${sourceLabel} (part ${
+                    index + 1
+                  }/${chunks.length})`
+                : sourceLabel,
+            text: chunk,
+          })
+        );
+      }
     }
+
+    // -------------------------------------------------------
+    // ENTIRE DOCUMENT
+    // -------------------------------------------------------
+
+    else if (source === "document") {
+      sourceLabel =
+        "Entire document";
+
+      sections = [
+        {
+          label: "Document title",
+          text: documentTitle,
+        },
+
+        ...pages.flatMap(
+          (page, index) => {
+            const pageNumber =
+              getPageNumber(
+                page,
+                index
+              );
+
+            const pageText =
+              getPageText(
+                page
+              ).trim();
+
+            if (!pageText) {
+              return [];
+            }
+
+            const chunks = [];
+
+            for (
+              let offset = 0;
+              offset < pageText.length;
+              offset += 2500
+            ) {
+              chunks.push(
+                pageText.slice(
+                  offset,
+                  offset + 2500
+                )
+              );
+            }
+
+            return chunks.map(
+              (
+                chunk,
+                chunkIndex
+              ) => ({
+                label:
+                  chunks.length > 1
+                    ? `Page ${pageNumber} (part ${
+                        chunkIndex + 1
+                      }/${chunks.length})`
+                    : `Page ${pageNumber}`,
+
+                text: chunk,
+              })
+            );
+          }
+        ),
+      ];
+    }
+
+    // -------------------------------------------------------
+    // SELECTED PAGES
+    // -------------------------------------------------------
+
+    else if (source === "pages") {
+      const selectedPageSet =
+        new Set(
+          selectedTranslationPages.map(
+            String
+          )
+        );
+
+      const chosenPages =
+        pages.filter(
+          (page, index) =>
+            selectedPageSet.has(
+              String(
+                getPageNumber(
+                  page,
+                  index
+                )
+              )
+            )
+        );
+
+      sourceLabel =
+        `Selected pages: ${chosenPages
+          .map((page) =>
+            getPageNumber(
+              page,
+              pages.indexOf(page)
+            )
+          )
+          .join(", ")}`;
+
+      sections =
+        chosenPages.flatMap(
+          (page) => {
+            const pageNumber =
+              getPageNumber(
+                page,
+                pages.indexOf(page)
+              );
+
+            const pageText =
+              getPageText(
+                page
+              ).trim();
+
+            if (!pageText) {
+              return [];
+            }
+
+            const chunks = [];
+
+            for (
+              let offset = 0;
+              offset < pageText.length;
+              offset += 2500
+            ) {
+              chunks.push(
+                pageText.slice(
+                  offset,
+                  offset + 2500
+                )
+              );
+            }
+
+            return chunks.map(
+              (
+                chunk,
+                chunkIndex
+              ) => ({
+                label:
+                  chunks.length > 1
+                    ? `Page ${pageNumber} (part ${
+                        chunkIndex + 1
+                      }/${chunks.length})`
+                    : `Page ${pageNumber}`,
+
+                text: chunk,
+              })
+            );
+          }
+        );
+    }
+
+    // -------------------------------------------------------
+    // CURRENT PAGE
+    // -------------------------------------------------------
+
+    else {
+      const page =
+        pages.find(
+          (item, index) =>
+            Number(
+              getPageNumber(
+                item,
+                index
+              )
+            ) ===
+            Number(
+              currentPageNumber
+            )
+        );
+
+      text =
+        getPageText(page).trim();
+
+      sourceLabel =
+        `Page ${currentPageNumber}`;
+
+      if (text) {
+        sections = [
+          {
+            label: sourceLabel,
+            text,
+          },
+        ];
+      }
+    }
+
+    // -------------------------------------------------------
+    // NO CONTENT
+    // -------------------------------------------------------
 
     if (!sections.length) {
-      setTranslationError(source === "selection"
-        ? "Select some text in the document first."
-        : source === "document"
+      setTranslationError(
+        source === "selection"
+          ? "Select some text in the document first."
+          : source === "document"
           ? "There is no extracted text in this document to translate."
           : source === "pages"
-            ? selectedTranslationPages.length
-              ? "The selected pages have no extracted text to translate."
-              : "Select one or more pages to translate first."
-          : "There is no extracted text on this page to translate.");
+          ? selectedTranslationPages.length
+            ? "The selected pages have no extracted text to translate."
+            : "Select one or more pages to translate first."
+          : "There is no extracted text on this page to translate."
+      );
+
       setTranslation("");
+
       return;
     }
+
+    // -------------------------------------------------------
+    // START TRANSLATION
+    // -------------------------------------------------------
 
     setTranslationLoading(true);
     setTranslationError("");
     setTranslation("");
     setTranslationSource(sourceLabel);
-    setTranslationResultLanguage(targetLanguage);
+    setTranslationResultLanguage(
+      targetLanguage
+    );
 
     try {
       const translatedSections = [];
-      for (let index = 0; index < sections.length; index += 1) {
-        const section = sections[index];
-        if (source === "document" || source === "pages") {
-          setTranslationProgress(`Translating section ${index + 1} of ${sections.length}…`);
+
+      for (
+        let index = 0;
+        index < sections.length;
+        index += 1
+      ) {
+        const section =
+          sections[index];
+
+        if (
+          source === "document" ||
+          source === "pages"
+        ) {
+          setTranslationProgress(
+            `Translating section ${
+              index + 1
+            } of ${
+              sections.length
+            }…`
+          );
         }
-        const response = await fetch(`${API_BASE_URL}/api/assistant/translate`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            targetLanguage,
-            text: section.text,
-          }),
-        });
-        const data = await response.json();
-        if (!response.ok) throw new Error(`${data.message || "Translation failed."} (${section.label})`);
-        if (!data.reply?.trim()) throw new Error(`The translation service returned an empty result for ${section.label}.`);
-        translatedSections.push(`--- ${section.label} ---\n${data.reply}`);
+
+        const response =
+          await fetch(
+            `${API_BASE_URL}/api/assistant/translate`,
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+
+              body: JSON.stringify({
+                targetLanguage,
+                text: section.text,
+              }),
+            }
+          );
+
+        const data =
+          await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            `${
+              data.message ||
+              "Translation failed."
+            } (${section.label})`
+          );
+        }
+
+        if (!data.reply?.trim()) {
+          throw new Error(
+            `The translation service returned an empty result for ${section.label}.`
+          );
+        }
+
+        translatedSections.push(
+          `--- ${section.label} ---\n${data.reply}`
+        );
       }
-      setTranslation(translatedSections.join("\n\n"));
+
+      // -----------------------------------------------------
+      // SHOW TRANSLATION RESULT
+      // -----------------------------------------------------
+
+      setTranslation(
+        translatedSections.join(
+          "\n\n"
+        )
+      );
+
+      setShowTranslationResult(
+        true
+      );
     } catch (error) {
       setTranslation("");
-      setTranslationError(error.message || "Translation failed. Please try again.");
+
+      setTranslationError(
+        error.message ||
+          "Translation failed. Please try again."
+      );
     } finally {
       setTranslationLoading(false);
       setTranslationProgress("");
@@ -906,11 +1448,14 @@ function Reader({ documentId }) {
     if (
       speechStatus === "speaking"
     ) {
-      if (generatedSpeechRef.current) {
+      if (
+        generatedSpeechRef.current
+      ) {
         generatedAudioRef.current?.pause();
         setSpeechStatus("paused");
         return;
       }
+
       window.speechSynthesis.pause();
       setSpeechStatus("paused");
       return;
@@ -919,11 +1464,14 @@ function Reader({ documentId }) {
     if (
       speechStatus === "paused"
     ) {
-      if (generatedSpeechRef.current) {
+      if (
+        generatedSpeechRef.current
+      ) {
         generatedAudioRef.current?.play();
         setSpeechStatus("speaking");
         return;
       }
+
       window.speechSynthesis.resume();
       setSpeechStatus("speaking");
     }
@@ -939,13 +1487,22 @@ function Reader({ documentId }) {
     }
 
     speechActiveRef.current = false;
+
     generatedAudioRef.current?.pause();
     generatedAudioRef.current = null;
-    generatedSpeechRef.current = false;
+
+    generatedSpeechRef.current =
+      false;
+
     if (generatedAudioUrlRef.current) {
-      URL.revokeObjectURL(generatedAudioUrlRef.current);
-      generatedAudioUrlRef.current = "";
+      URL.revokeObjectURL(
+        generatedAudioUrlRef.current
+      );
+
+      generatedAudioUrlRef.current =
+        "";
     }
+
     speechQueueRef.current = [];
     speechIndexRef.current = 0;
 
@@ -953,7 +1510,8 @@ function Reader({ documentId }) {
 
     setSpeechStatus("idle");
     setSpeechSource("");
-    speechLanguageRef.current = "";
+    speechLanguageRef.current =
+      "";
   };
 
   // =========================================================
@@ -1009,7 +1567,9 @@ function Reader({ documentId }) {
     selectedVoiceRef.current =
       voiceName;
 
-    setSelectedVoice(voiceName);
+    setSelectedVoice(
+      voiceName
+    );
 
     if (
       speechStatus === "speaking" ||
@@ -1051,53 +1611,55 @@ function Reader({ documentId }) {
 
     const results = [];
 
-    pages.forEach((page, index) => {
-      const text =
-        getPageText(page);
+    pages.forEach(
+      (page, index) => {
+        const text =
+          getPageText(page);
 
-      if (!text) {
-        return;
-      }
-
-      const lowerText =
-        text.toLowerCase();
-
-      let start = 0;
-      let count = 0;
-
-      while (true) {
-        const position =
-          lowerText.indexOf(
-            query,
-            start
-          );
-
-        if (position === -1) {
-          break;
+        if (!text) {
+          return;
         }
 
-        results.push({
-          pageNumber:
-            getPageNumber(
-              page,
-              index
-            ),
-          index: count,
-          position,
-        });
+        const lowerText =
+          text.toLowerCase();
 
-        count += 1;
+        let start = 0;
+        let count = 0;
 
-        start =
-          position +
-          query.length;
+        while (true) {
+          const position =
+            lowerText.indexOf(
+              query,
+              start
+            );
+
+          if (position === -1) {
+            break;
+          }
+
+          results.push({
+            pageNumber:
+              getPageNumber(
+                page,
+                index
+              ),
+
+            index: count,
+            position,
+          });
+
+          count += 1;
+
+          start =
+            position +
+            query.length;
+        }
       }
-    });
+    );
 
     return results;
   }, [searchQuery, pages]);
 
-  // =========================================================
   // =========================================================
   // SCROLL TO SEARCH RESULT
   // =========================================================
@@ -1121,7 +1683,9 @@ function Reader({ documentId }) {
       });
 
       setCurrentPageNumber(
-        Number(result.pageNumber)
+        Number(
+          result.pageNumber
+        )
       );
     }
   };
@@ -1139,7 +1703,9 @@ function Reader({ documentId }) {
       (currentSearchIndex + 1) %
       searchResults.length;
 
-    setCurrentSearchIndex(nextIndex);
+    setCurrentSearchIndex(
+      nextIndex
+    );
 
     scrollToSearchResult(
       searchResults[nextIndex]
@@ -1150,25 +1716,28 @@ function Reader({ documentId }) {
   // PREVIOUS SEARCH RESULT
   // =========================================================
 
-  const goToPreviousSearchResult = () => {
-    if (!searchResults.length) {
-      return;
-    }
+  const goToPreviousSearchResult =
+    () => {
+      if (!searchResults.length) {
+        return;
+      }
 
-    const previousIndex =
-      (currentSearchIndex -
-        1 +
-        searchResults.length) %
-      searchResults.length;
+      const previousIndex =
+        (currentSearchIndex -
+          1 +
+          searchResults.length) %
+        searchResults.length;
 
-    setCurrentSearchIndex(
-      previousIndex
-    );
+      setCurrentSearchIndex(
+        previousIndex
+      );
 
-    scrollToSearchResult(
-      searchResults[previousIndex]
-    );
-  };
+      scrollToSearchResult(
+        searchResults[
+          previousIndex
+        ]
+      );
+    };
 
   // =========================================================
   // ESCAPE HTML
@@ -1176,11 +1745,26 @@ function Reader({ documentId }) {
 
   const escapeHtml = (value) => {
     return String(value)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
+      .replace(
+        /&/g,
+        "&amp;"
+      )
+      .replace(
+        /</g,
+        "&lt;"
+      )
+      .replace(
+        />/g,
+        "&gt;"
+      )
+      .replace(
+        /"/g,
+        "&quot;"
+      )
+      .replace(
+        /'/g,
+        "&#039;"
+      );
   };
 
   // =========================================================
@@ -1206,10 +1790,14 @@ function Reader({ documentId }) {
       return "";
     }
 
-    let html = escapeHtml(text);
+    const originalText =
+      String(text);
+
+    let html =
+      escapeHtml(originalText);
 
     // -------------------------------------------------------
-    // Saved highlights
+    // SAVED HIGHLIGHTS
     // -------------------------------------------------------
 
     const pageHighlights =
@@ -1220,34 +1808,157 @@ function Reader({ documentId }) {
           ) === Number(pageNumber)
       );
 
-    pageHighlights.forEach(
-      (highlight) => {
-        const highlightedText =
-          highlight.text ||
-          highlight.content;
+    const hasStoredRange =
+      (highlight) =>
+        highlight.start != null &&
+        highlight.end != null;
 
-        if (!highlightedText) {
-          return;
-        }
+    const rangedHighlights =
+      pageHighlights
+        .filter((highlight) => {
+          if (
+            !hasStoredRange(
+              highlight
+            )
+          ) {
+            return false;
+          }
 
-        const escaped =
-          escapeHtml(
-            highlightedText
+          const start =
+            Number(
+              highlight.start
+            );
+
+          const end =
+            Number(
+              highlight.end
+            );
+
+          return (
+            Number.isInteger(
+              start
+            ) &&
+            Number.isInteger(
+              end
+            ) &&
+            start >= 0 &&
+            end > start &&
+            end <=
+              originalText.length
+          );
+        })
+        .sort(
+          (first, second) =>
+            Number(first.start) -
+            Number(second.start)
+        );
+
+    if (rangedHighlights.length) {
+      const highlightedParts = [];
+      let cursor = 0;
+
+      rangedHighlights.forEach(
+        (highlight) => {
+          const start =
+            Number(
+              highlight.start
+            );
+
+          const end =
+            Number(
+              highlight.end
+            );
+
+          if (start < cursor) {
+            return;
+          }
+
+          const segment =
+            originalText.slice(
+              start,
+              end
+            );
+
+          const expectedText =
+            String(
+              highlight.text ||
+                highlight.content ||
+                ""
+            ).trim();
+
+          if (
+            segment.trim() !==
+            expectedText
+          ) {
+            return;
+          }
+
+          highlightedParts.push(
+            escapeHtml(
+              originalText.slice(
+                cursor,
+                start
+              )
+            )
           );
 
-        html = html.replace(
-          new RegExp(
-            escapeRegExp(escaped),
-            "gi"
-          ),
-          (match) =>
-            `<mark class="reader-saved-highlight">${match}</mark>`
-        );
-      }
-    );
+          highlightedParts.push(
+            `<mark class="reader-saved-highlight">${escapeHtml(
+              segment
+            )}</mark>`
+          );
+
+          cursor = end;
+        }
+      );
+
+      highlightedParts.push(
+        escapeHtml(
+          originalText.slice(cursor)
+        )
+      );
+
+      html =
+        highlightedParts.join("");
+    }
+
+    pageHighlights
+      .filter(
+        (highlight) =>
+          !hasStoredRange(
+            highlight
+          )
+      )
+      .forEach(
+        (highlight) => {
+          const highlightedText =
+            highlight.text ||
+            highlight.content;
+
+          if (!highlightedText) {
+            return;
+          }
+
+          const escaped =
+            escapeHtml(
+              highlightedText
+            );
+
+          html = html.replace(
+            new RegExp(
+              escapeRegExp(
+                escaped
+              ),
+              "gi"
+            ),
+            (match) =>
+              `<mark class="reader-saved-highlight">${match}</mark>`
+          );
+        }
+      );
 
     // -------------------------------------------------------
-    // Search highlights
+    // SEARCH HIGHLIGHTS
     // -------------------------------------------------------
 
     const query =
@@ -1275,11 +1986,14 @@ function Reader({ documentId }) {
               (result) =>
                 Number(
                   result.pageNumber
-                ) === Number(pageNumber)
+                ) ===
+                Number(pageNumber)
             );
 
           const resultForOccurrence =
-            pageResults[occurrence];
+            pageResults[
+              occurrence
+            ];
 
           const globalIndex =
             resultForOccurrence
@@ -1312,13 +2026,19 @@ function Reader({ documentId }) {
 
   const zoomIn = () => {
     setZoom((current) =>
-      Math.min(current + 10, 180)
+      Math.min(
+        current + 10,
+        180
+      )
     );
   };
 
   const zoomOut = () => {
     setZoom((current) =>
-      Math.max(current - 10, 60)
+      Math.max(
+        current - 10,
+        60
+      )
     );
   };
 
@@ -1345,49 +2065,104 @@ function Reader({ documentId }) {
   // TOGGLE BOOKMARK
   // =========================================================
 
-  const toggleBookmark = async (
-    pageNumber
-  ) => {
-    if (
-      !documentId ||
-      pageNumber === undefined ||
-      pageNumber === null
-    ) {
-      return;
-    }
+  const toggleBookmark =
+    async (pageNumber) => {
+      if (
+        !documentId ||
+        pageNumber ===
+          undefined ||
+        pageNumber === null
+      ) {
+        return;
+      }
 
-    const normalizedPageNumber =
-      Number(pageNumber);
+      const normalizedPageNumber =
+        Number(pageNumber);
 
-    if (
-      !Number.isFinite(
-        normalizedPageNumber
-      )
-    ) {
-      return;
-    }
+      if (
+        !Number.isFinite(
+          normalizedPageNumber
+        )
+      ) {
+        return;
+      }
 
-    const existingBookmark =
-      bookmarks.find(
-        (bookmark) =>
-          Number(
-            bookmark.pageNumber
-          ) === normalizedPageNumber
-      );
+      const existingBookmark =
+        bookmarks.find(
+          (bookmark) =>
+            Number(
+              bookmark.pageNumber
+            ) ===
+            normalizedPageNumber
+        );
 
-    try {
-      setBookmarkError("");
+      try {
+        setBookmarkError("");
 
-      // =====================================================
-      // REMOVE BOOKMARK
-      // =====================================================
+        // ---------------------------------------------------
+        // REMOVE BOOKMARK
+        // ---------------------------------------------------
 
-      if (existingBookmark) {
+        if (existingBookmark) {
+          const response =
+            await fetch(
+              `${API_BASE_URL}/api/documents/${documentId}/bookmarks/${normalizedPageNumber}`,
+              {
+                method: "DELETE",
+                headers: {
+                  Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+                },
+              }
+            );
+
+          const data =
+            await response.json();
+
+          if (!response.ok) {
+            throw new Error(
+              data.message ||
+                "Unable to remove bookmark."
+            );
+          }
+
+          setBookmarks(
+            (current) =>
+              Array.isArray(
+                data.bookmarks
+              )
+                ? data.bookmarks
+                : current.filter(
+                    (bookmark) =>
+                      Number(
+                        bookmark.pageNumber
+                      ) !==
+                      normalizedPageNumber
+                  )
+          );
+
+          return;
+        }
+
+        // ---------------------------------------------------
+        // ADD BOOKMARK
+        // ---------------------------------------------------
+
         const response =
           await fetch(
-            `${API_BASE_URL}/api/documents/${documentId}/bookmarks/${normalizedPageNumber}`,
+            `${API_BASE_URL}/api/documents/${documentId}/bookmarks`,
             {
-              method: "DELETE",
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+                Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+              },
+
+              body: JSON.stringify({
+                pageNumber:
+                  normalizedPageNumber,
+              }),
             }
           );
 
@@ -1397,76 +2172,30 @@ function Reader({ documentId }) {
         if (!response.ok) {
           throw new Error(
             data.message ||
-              "Unable to remove bookmark."
+              "Unable to save bookmark."
           );
         }
 
-        setBookmarks((current) =>
-          Array.isArray(
-            data.bookmarks
-          )
-            ? data.bookmarks
-            : current.filter(
-                (bookmark) =>
-                  Number(
-                    bookmark.pageNumber
-                  ) !==
-                  normalizedPageNumber
-              )
+        setBookmarks(
+          (current) =>
+            Array.isArray(
+              data.bookmarks
+            )
+              ? data.bookmarks
+              : current
+        );
+      } catch (err) {
+        console.error(
+          "Bookmark error:",
+          err
         );
 
-        return;
-      }
-
-      // =====================================================
-      // ADD BOOKMARK
-      // =====================================================
-
-      const response =
-        await fetch(
-          `${API_BASE_URL}/api/documents/${documentId}/bookmarks`,
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-
-            body: JSON.stringify({
-              pageNumber:
-                normalizedPageNumber,
-            }),
-          }
-        );
-
-      const data =
-        await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message ||
-            "Unable to save bookmark."
+        setBookmarkError(
+          err.message ||
+            "Unable to update bookmark."
         );
       }
-
-      setBookmarks((current) =>
-        Array.isArray(data.bookmarks)
-          ? data.bookmarks
-          : current
-      );
-    } catch (err) {
-      console.error(
-        "Bookmark error:",
-        err
-      );
-
-      setBookmarkError(
-        err.message ||
-          "Unable to update bookmark."
-      );
-    }
-  };
+    };
 
   // =========================================================
   // GET SELECTION INFORMATION
@@ -1484,7 +2213,9 @@ function Reader({ documentId }) {
     }
 
     const selectedText =
-      selection.toString().trim();
+      selection
+        .toString()
+        .trim();
 
     if (!selectedText) {
       return null;
@@ -1520,15 +2251,79 @@ function Reader({ documentId }) {
         )
       );
 
-    const pageText =
+    const textElement =
       pageElement.querySelector(
         ".reader-page-text"
-      )?.innerText || "";
-
-    const startOffset =
-      pageText.indexOf(
-        selectedText
       );
+
+    const pageText =
+      textElement?.textContent ||
+      "";
+
+    let startOffset = -1;
+    let endOffset = -1;
+
+    if (textElement) {
+      try {
+        const prefixRange =
+          document.createRange();
+
+        prefixRange.selectNodeContents(
+          textElement
+        );
+
+        prefixRange.setEnd(
+          range.startContainer,
+          range.startOffset
+        );
+
+        const rawSelection =
+          selection.toString();
+
+        const leadingTrim =
+          rawSelection.length -
+          rawSelection.trimStart()
+            .length;
+
+        startOffset =
+          prefixRange.toString()
+            .length +
+          leadingTrim;
+
+        endOffset =
+          startOffset +
+          selectedText.length;
+
+        if (
+          pageText
+            .slice(
+              startOffset,
+              endOffset
+            )
+            .trim() !==
+          selectedText
+        ) {
+          startOffset = -1;
+          endOffset = -1;
+        }
+      } catch {
+        startOffset = -1;
+        endOffset = -1;
+      }
+    }
+
+    if (startOffset < 0) {
+      startOffset =
+        pageText.indexOf(
+          selectedText
+        );
+
+      endOffset =
+        startOffset >= 0
+          ? startOffset +
+            selectedText.length
+          : -1;
+    }
 
     return {
       selectedText,
@@ -1537,13 +2332,12 @@ function Reader({ documentId }) {
       startOffset:
         startOffset >= 0
           ? startOffset
-          : 0,
+          : undefined,
 
       endOffset:
-        startOffset >= 0
-          ? startOffset +
-            selectedText.length
-          : selectedText.length,
+        endOffset >= 0
+          ? endOffset
+          : undefined,
     };
   };
 
@@ -1551,146 +2345,182 @@ function Reader({ documentId }) {
   // SAVE HIGHLIGHT
   // =========================================================
 
-  const saveHighlight = async () => {
-    const selectionInfo =
-      getSelectionInfo();
+  const saveHighlight =
+    async () => {
+      const selectionInfo =
+        selectionInfoRef.current ||
+        getSelectionInfo();
 
-    if (!selectionInfo) {
-      alert(
-        "Please select some text first."
-      );
-      return;
-    }
-
-    try {
-      const response =
-        await fetch(
-          `${API_BASE_URL}/api/documents/${documentId}/highlights`,
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-
-            body: JSON.stringify({
-              pageNumber:
-                selectionInfo.pageNumber,
-
-              text:
-                selectionInfo.selectedText,
-
-              start:
-                selectionInfo.startOffset,
-
-              end:
-                selectionInfo.endOffset,
-            }),
-          }
+      if (!selectionInfo) {
+        alert(
+          "Please select some text first."
         );
 
-      const data =
-        await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message ||
-            "Failed to save highlight"
-        );
+        return;
       }
 
-      if (
-        Array.isArray(
-          data.highlights
-        )
-      ) {
-        setHighlights(
-          data.highlights
+      console.log(
+        "Saving highlight:",
+        selectionInfo
+      );
+
+      const scrollPosition = {
+        x: window.scrollX,
+        y: window.scrollY,
+      };
+
+      try {
+        const response =
+          await fetch(
+            `${API_BASE_URL}/api/documents/${documentId}/highlights`,
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+                Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+              },
+
+              body: JSON.stringify({
+                pageNumber:
+                  selectionInfo.pageNumber,
+
+                text:
+                  selectionInfo.selectedText,
+
+                start:
+                  selectionInfo.startOffset,
+
+                end:
+                  selectionInfo.endOffset,
+              }),
+            }
+          );
+
+        const data =
+          await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.message ||
+              "Failed to save highlight"
+          );
+        }
+
+        if (
+          Array.isArray(
+            data.highlights
+          )
+        ) {
+          setHighlights(
+            data.highlights
+          );
+        } else {
+          const newHighlight =
+            data.highlight ||
+            data;
+
+          setHighlights(
+            (current) => [
+              ...current,
+              newHighlight,
+            ]
+          );
+        }
+
+        window
+          .getSelection()
+          ?.removeAllRanges();
+
+        selectionInfoRef.current =
+          null;
+
+        setSelectionHighlightPosition(
+          null
         );
-      } else {
-        const newHighlight =
-          data.highlight || data;
 
-        setHighlights((current) => [
-          ...current,
-          newHighlight,
-        ]);
+        window.scrollTo({
+          left: scrollPosition.x,
+          top: scrollPosition.y,
+          behavior: "instant",
+        });
+      } catch (err) {
+        console.error(
+          "Highlight error:",
+          err
+        );
+
+        alert(
+          err.message ||
+            "Unable to save this highlight."
+        );
       }
-
-      window
-        .getSelection()
-        ?.removeAllRanges();
-    } catch (err) {
-      console.error(
-        "Highlight error:",
-        err
-      );
-
-      alert(
-        err.message ||
-          "Unable to save this highlight."
-      );
-    }
-  };
+    };
 
   // =========================================================
   // REMOVE HIGHLIGHT
   // =========================================================
 
-  const removeHighlight = async (
-    highlightId
-  ) => {
-    if (!highlightId) {
-      return;
-    }
-
-    try {
-      const response =
-        await fetch(
-          `${API_BASE_URL}/api/documents/${documentId}/highlights/${encodeURIComponent(
-            highlightId
-          )}`,
-          {
-            method: "DELETE",
-          }
-        );
-
-      const data =
-        await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message ||
-            "Failed to remove highlight"
-        );
+  const removeHighlight =
+    async (highlightId) => {
+      if (!highlightId) {
+        return;
       }
 
-      if (
-        Array.isArray(
-          data.highlights
-        )
-      ) {
-        setHighlights(
-          data.highlights
-        );
-      } else {
-        setHighlights((current) =>
-          current.filter(
-            (highlight) =>
-              String(
-                highlight.id
-              ) !== String(highlightId)
+      try {
+        const response =
+          await fetch(
+            `${API_BASE_URL}/api/documents/${documentId}/highlights/${encodeURIComponent(
+              highlightId
+            )}`,
+            {
+              method: "DELETE",
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+              },
+            }
+          );
+
+        const data =
+          await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.message ||
+              "Failed to remove highlight"
+          );
+        }
+
+        if (
+          Array.isArray(
+            data.highlights
           )
+        ) {
+          setHighlights(
+            data.highlights
+          );
+        } else {
+          setHighlights(
+            (current) =>
+              current.filter(
+                (highlight) =>
+                  String(
+                    highlight.id
+                  ) !==
+                  String(
+                    highlightId
+                  )
+              )
+          );
+        }
+      } catch (err) {
+        console.error(
+          "Remove highlight error:",
+          err
         );
       }
-    } catch (err) {
-      console.error(
-        "Remove highlight error:",
-        err
-      );
-    }
-  };
+    };
 
   // =========================================================
   // JUMP TO PAGE
@@ -1936,7 +2766,57 @@ function Reader({ documentId }) {
           MAIN CONTENT
       ====================================================== */}
 
-      <main className="reader-content">
+      <main
+        className="reader-content"
+        onMouseUp={() => {
+          setTimeout(() => {
+            const selectionInfo =
+              getSelectionInfo();
+
+            if (!selectionInfo) {
+              return;
+            }
+
+            selectionInfoRef.current =
+              selectionInfo;
+
+            const selection =
+              window.getSelection();
+
+            if (
+              !selection ||
+              selection.rangeCount === 0
+            ) {
+              return;
+            }
+
+            const range =
+              selection.getRangeAt(0);
+
+            const bounds =
+              range.getBoundingClientRect();
+
+            setSelectionHighlightPosition({
+              left: Math.max(
+                8,
+                Math.min(
+                  window.innerWidth -
+                    120,
+                  bounds.left +
+                    bounds.width /
+                      2 -
+                    55
+                )
+              ),
+
+              top: Math.max(
+                8,
+                bounds.top - 50
+              ),
+            });
+          }, 0);
+        }}
+      >
 
         {/* ===================================================
             TOP BAR
@@ -2004,7 +2884,7 @@ function Reader({ documentId }) {
 
         <div className="reader-toolbar">
 
-          {/* Search */}
+          {/* SEARCH */}
 
           <div className="reader-search">
             <span>
@@ -2015,8 +2895,13 @@ function Reader({ documentId }) {
               type="text"
               value={searchQuery}
               onChange={(event) => {
-                setSearchQuery(event.target.value);
-                setCurrentSearchIndex(0);
+                setSearchQuery(
+                  event.target.value
+                );
+
+                setCurrentSearchIndex(
+                  0
+                );
               }}
               placeholder="Search in document..."
             />
@@ -2027,7 +2912,9 @@ function Reader({ documentId }) {
                 className="reader-search-clear"
                 onClick={() => {
                   setSearchQuery("");
-                  setCurrentSearchIndex(0);
+                  setCurrentSearchIndex(
+                    0
+                  );
                 }}
               >
                 ×
@@ -2035,14 +2922,15 @@ function Reader({ documentId }) {
             )}
           </div>
 
-          {/* Search Button */}
+          {/* SEARCH BUTTON */}
 
           <button
             type="button"
             className="reader-search-button"
             onClick={() => {
               if (
-                searchResults.length > 0
+                searchResults.length >
+                0
               ) {
                 scrollToSearchResult(
                   searchResults[
@@ -2055,7 +2943,7 @@ function Reader({ documentId }) {
             Search
           </button>
 
-          {/* Controls */}
+          {/* CONTROLS */}
 
           <div className="reader-controls">
             <button
@@ -2088,6 +2976,9 @@ function Reader({ documentId }) {
             <button
               type="button"
               className="reader-highlight-button"
+              onMouseDown={(event) =>
+                event.preventDefault()
+              }
               onClick={saveHighlight}
             >
               Highlight
@@ -2103,16 +2994,19 @@ function Reader({ documentId }) {
           <div className="reader-search-results">
             <div className="reader-search-results-header">
               <span>
-                {searchResults.length > 0
+                {searchResults.length >
+                0
                   ? `${searchResults.length} result${
-                      searchResults.length === 1
+                      searchResults.length ===
+                      1
                         ? ""
                         : "s"
                     }`
                   : "No results"}
               </span>
 
-              {searchResults.length > 0 && (
+              {searchResults.length >
+                0 && (
                 <div className="reader-search-navigation">
                   <button
                     type="button"
@@ -2124,7 +3018,8 @@ function Reader({ documentId }) {
                   </button>
 
                   <span className="reader-search-count">
-                    {currentSearchIndex + 1}
+                    {currentSearchIndex +
+                      1}
                     {" / "}
                     {searchResults.length}
                   </span>
@@ -2141,7 +3036,8 @@ function Reader({ documentId }) {
               )}
             </div>
 
-            {searchResults.length > 0 && (
+            {searchResults.length >
+              0 && (
               <div className="reader-search-results-list">
                 {searchResults
                   .slice(0, 10)
@@ -2173,7 +3069,8 @@ function Reader({ documentId }) {
 
                         <strong>
                           Match{" "}
-                          {result.index + 1}
+                          {result.index +
+                            1}
                         </strong>
                       </button>
                     )
@@ -2288,12 +3185,15 @@ function Reader({ documentId }) {
                   </select>
                 </label>
 
-                {voices.length > 0 && (
+                {voices.length >
+                  0 && (
                   <label>
                     Voice
 
                     <select
-                      value={selectedVoice}
+                      value={
+                        selectedVoice
+                      }
                       onChange={
                         handleVoiceChange
                       }
@@ -2306,8 +3206,12 @@ function Reader({ documentId }) {
                               voice.name
                             }
                           >
-                            {voice.name} (
-                            {voice.lang})
+                            {voice.name}{" "}
+                            (
+                            {
+                              voice.lang
+                            }
+                            )
                           </option>
                         )
                       )}
@@ -2337,8 +3241,8 @@ function Reader({ documentId }) {
                 {speechStatus ===
                   "idle" && (
                   <span>
-                    Select text or read the
-                    current page.
+                    Select text or read
+                    the current page.
                   </span>
                 )}
               </div>
@@ -2351,15 +3255,29 @@ function Reader({ documentId }) {
           )}
         </section>
 
+        {/* ===================================================
+            TRANSLATION
+        ==================================================== */}
+
         <section className="reader-translation-panel">
           <div className="reader-translation-header">
             <div>
               <div className="reader-translation-title">
-                <span className="reader-translation-icon" aria-hidden="true">文</span>
-                <span>Translate document</span>
+                <span
+                  className="reader-translation-icon"
+                  aria-hidden="true"
+                >
+                  文
+                </span>
+
+                <span>
+                  Translate document
+                </span>
               </div>
+
               <p className="reader-translation-subtitle">
-                Translate the current page or selected text.
+                Translate the current page or
+                selected text.
               </p>
             </div>
           </div>
@@ -2368,113 +3286,328 @@ function Reader({ documentId }) {
             <select
               className="reader-translation-select"
               aria-label="Translation language"
-              value={translationLanguage}
-              onChange={(event) => setTranslationLanguage(event.target.value)}
+              value={
+                translationLanguage
+              }
+              onChange={(event) =>
+                setTranslationLanguage(
+                  event.target.value
+                )
+              }
             >
-              {["English", "Hindi", "Malayalam", "Tamil", "Telugu", "Bengali", "Marathi", "Kannada", "Gujarati", "Punjabi", "Urdu", "Spanish", "French", "German", "Arabic", "Chinese", "Japanese", "Portuguese", "Italian", "Korean", "Russian"].map((language) => (
-                <option key={language} value={language}>{language}</option>
-              ))}
+              {[
+                "English",
+                "Hindi",
+                "Malayalam",
+                "Tamil",
+                "Telugu",
+                "Bengali",
+                "Marathi",
+                "Kannada",
+                "Gujarati",
+                "Punjabi",
+                "Urdu",
+                "Spanish",
+                "French",
+                "German",
+                "Arabic",
+                "Chinese",
+                "Japanese",
+                "Portuguese",
+                "Italian",
+                "Korean",
+                "Russian",
+              ].map(
+                (language) => (
+                  <option
+                    key={language}
+                    value={language}
+                  >
+                    {language}
+                  </option>
+                )
+              )}
             </select>
+
             <button
               className="reader-translate-button"
               type="button"
-              onClick={() => translateText("pages")}
-              disabled={translationLoading || selectedTranslationPages.length === 0}
+              onClick={() =>
+                translateText("pages")
+              }
+              disabled={
+                translationLoading ||
+                selectedTranslationPages.length ===
+                  0
+              }
             >
-              {translationLoading && translationSource.startsWith("Selected pages:")
-                ? translationProgress || "Translating selected pages…"
+              {translationLoading &&
+              translationSource.startsWith(
+                "Selected pages:"
+              )
+                ? translationProgress ||
+                  "Translating selected pages…"
                 : `Translate selected pages (${selectedTranslationPages.length})`}
             </button>
+
             <button
               className="reader-translate-button"
               type="button"
-              onClick={() => translateText("document")}
-              disabled={translationLoading}
+              onClick={() =>
+                translateText(
+                  "document"
+                )
+              }
+              disabled={
+                translationLoading
+              }
             >
-              {translationLoading && translationSource === "Entire document"
-                ? translationProgress || "Translating document…"
+              {translationLoading &&
+              translationSource ===
+                "Entire document"
+                ? translationProgress ||
+                  "Translating document…"
                 : "Translate Entire Document"}
             </button>
+
             <button
               className="reader-translate-button"
               type="button"
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => translateText("selection")}
-              disabled={translationLoading}
+              onMouseDown={(event) =>
+                event.preventDefault()
+              }
+              onClick={() =>
+                translateText(
+                  "selection"
+                )
+              }
+              disabled={
+                translationLoading
+              }
             >
               Translate Selection
             </button>
           </div>
 
+          {/* PAGE SELECTION */}
+
           <div className="reader-translation-page-picker">
             <div className="reader-translation-page-picker-heading">
-              <strong>Choose pages to translate</strong>
+              <strong>
+                Choose pages to translate
+              </strong>
+
               <button
                 type="button"
-                onClick={() => setSelectedTranslationPages(
-                  selectedTranslationPages.length === pages.length
-                    ? []
-                    : pages.map((page, index) => getPageNumber(page, index))
-                )}
-                disabled={!pages.length || translationLoading}
+                onClick={() =>
+                  setSelectedTranslationPages(
+                    selectedTranslationPages.length ===
+                      pages.length
+                      ? []
+                      : pages.map(
+                          (
+                            page,
+                            index
+                          ) =>
+                            getPageNumber(
+                              page,
+                              index
+                            )
+                        )
+                  )
+                }
+                disabled={
+                  !pages.length ||
+                  translationLoading
+                }
               >
-                {selectedTranslationPages.length === pages.length ? "Clear selection" : "Select all"}
+                {selectedTranslationPages.length ===
+                pages.length
+                  ? "Clear selection"
+                  : "Select all"}
               </button>
             </div>
+
             <div className="reader-translation-page-options">
-              {pages.map((page, index) => {
-                const pageNumber = getPageNumber(page, index);
-                const selected = selectedTranslationPages.some((item) => String(item) === String(pageNumber));
-                return (
-                  <label key={pageNumber}>
-                    <input
-                      type="checkbox"
-                      checked={selected}
-                      disabled={translationLoading}
-                      onChange={() => setSelectedTranslationPages((current) =>
-                        selected
-                          ? current.filter((item) => String(item) !== String(pageNumber))
-                          : [...current, pageNumber]
-                      )}
-                    />
-                    Page {pageNumber}
-                  </label>
-                );
-              })}
+              {pages.map(
+                (page, index) => {
+                  const pageNumber =
+                    getPageNumber(
+                      page,
+                      index
+                    );
+
+                  const selected =
+                    selectedTranslationPages.some(
+                      (item) =>
+                        String(
+                          item
+                        ) ===
+                        String(
+                          pageNumber
+                        )
+                    );
+
+                  return (
+                    <label
+                      key={
+                        pageNumber
+                      }
+                    >
+                      <input
+                        type="checkbox"
+                        checked={
+                          selected
+                        }
+                        disabled={
+                          translationLoading
+                        }
+                        onChange={() =>
+                          setSelectedTranslationPages(
+                            (
+                              current
+                            ) =>
+                              selected
+                                ? current.filter(
+                                    (
+                                      item
+                                    ) =>
+                                      String(
+                                        item
+                                      ) !==
+                                      String(
+                                        pageNumber
+                                      )
+                                  )
+                                : [
+                                    ...current,
+                                    pageNumber,
+                                  ]
+                          )
+                        }
+                      />
+
+                      Page{" "}
+                      {pageNumber}
+                    </label>
+                  );
+                }
+              )}
             </div>
           </div>
 
+          {/* TRANSLATION ERROR */}
+
           {translationError && (
-            <div className="reader-translation-error" role="alert">{translationError}</div>
-          )}
-          {translationProgress && (translationSource === "Entire document" || translationSource.startsWith("Selected pages:")) && (
-            <div className="reader-translation-status loading" role="status">{translationProgress}</div>
-          )}
-          {translation && (
-            <div className="reader-translated-result" aria-live="polite">
-              <div className="reader-translated-result-header">
-                <strong>{translationSource} · {translationResultLanguage}</strong>
-              </div>
-              {speechSupported && (
-                <button
-                  className="reader-translation-voice"
-                  type="button"
-                  onClick={readTranslatedText}
-                >
-                  Read translation aloud in {translationResultLanguage}
-                </button>
-              )}
-              {speechLanguageError && (
-                <div className="reader-translation-error" role="alert">{speechLanguageError}</div>
-              )}
-              <div
-                className="reader-translated-text reader-translated-markdown"
-                dangerouslySetInnerHTML={{
-                  __html: DOMPurify.sanitize(marked.parse(translation)),
-                }}
-              />
+            <div
+              className="reader-translation-error"
+              role="alert"
+            >
+              {translationError}
             </div>
           )}
+
+          {/* TRANSLATION PROGRESS */}
+
+          {translationProgress &&
+            (
+              translationSource ===
+                "Entire document" ||
+              translationSource.startsWith(
+                "Selected pages:"
+              )
+            ) && (
+              <div
+                className="reader-translation-status loading"
+                role="status"
+              >
+                {translationProgress}
+              </div>
+            )}
+
+          {/* =================================================
+              TRANSLATED RESULT
+          ================================================== */}
+
+          {translation &&
+            showTranslationResult && (
+              <div
+                className="reader-translated-result"
+                aria-live="polite"
+              >
+                <div className="reader-translated-result-header">
+                  <strong>
+                    {translationSource} ·{" "}
+                    {
+                      translationResultLanguage
+                    }
+                  </strong>
+
+                  {/* CLOSE BUTTON */}
+
+                  <button
+                    type="button"
+                    className="reader-translation-close"
+                    onClick={() => {
+                      stopSpeech();
+                      setShowTranslationResult(
+                        false
+                      );
+                    }}
+                    title="Close translation"
+                    aria-label="Close translation"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                {/* READ TRANSLATION */}
+
+                {speechSupported && (
+                  <button
+                    className="reader-translation-voice"
+                    type="button"
+                    onClick={
+                      readTranslatedText
+                    }
+                  >
+                    🔊 Read translation aloud
+                    in{" "}
+                    {
+                      translationResultLanguage
+                    }
+                  </button>
+                )}
+
+                {/* SPEECH ERROR */}
+
+                {speechLanguageError && (
+                  <div
+                    className="reader-translation-error"
+                    role="alert"
+                  >
+                    {
+                      speechLanguageError
+                    }
+                  </div>
+                )}
+
+                {/* TRANSLATED TEXT */}
+
+                <div
+                  className="reader-translated-text reader-translated-markdown"
+                  dangerouslySetInnerHTML={{
+                    __html:
+                      DOMPurify.sanitize(
+                        marked.parse(
+                          translation
+                        )
+                      ),
+                  }}
+                />
+              </div>
+            )}
+
         </section>
 
         {/* ===================================================
@@ -2657,6 +3790,35 @@ function Reader({ documentId }) {
         {/* ===================================================
             SAVED HIGHLIGHTS
         ==================================================== */}
+
+        {selectionHighlightPosition && (
+          <button
+            type="button"
+            className="reader-selection-highlight-action"
+            onMouseDown={(event) =>
+              event.preventDefault()
+            }
+            onClick={saveHighlight}
+            style={{
+              position: "fixed",
+              left:
+                selectionHighlightPosition.left,
+              top:
+                selectionHighlightPosition.top,
+              zIndex: 1000,
+              border: 0,
+              borderRadius: 8,
+              padding: "8px 12px",
+              background: "#4b254f",
+              color: "white",
+              boxShadow:
+                "0 4px 14px rgba(48, 36, 59, 0.22)",
+              cursor: "pointer",
+            }}
+          >
+            Highlight
+          </button>
+        )}
 
         {highlights.length > 0 && (
           <section className="reader-highlights">

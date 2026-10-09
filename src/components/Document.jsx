@@ -2,8 +2,20 @@ import React, { useEffect, useMemo, useState } from "react";
 import "./Document.css";
 
 const API_BASE_URL = "http://localhost:5000";
+const SETTINGS_KEY = "dociq.settings";
+
+function getSavedDocumentView() {
+  try {
+    return JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}").documentView === "grid"
+      ? "grid"
+      : "list";
+  } catch {
+    return "list";
+  }
+}
 
 function Documents() {
+  const recentDocumentsKey = `recentDocuments:${(localStorage.getItem("userEmail") || "").trim().toLowerCase() || "anonymous"}`;
   const [documents, setDocuments] = useState([]);
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -11,6 +23,15 @@ function Documents() {
   const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState(null);
   const [openingId, setOpeningId] = useState(null);
+  const [documentView, setDocumentView] = useState(getSavedDocumentView);
+
+  useEffect(() => {
+    const syncDocumentView = (event) => {
+      if (event.key === SETTINGS_KEY) setDocumentView(getSavedDocumentView());
+    };
+    window.addEventListener("storage", syncDocumentView);
+    return () => window.removeEventListener("storage", syncDocumentView);
+  }, []);
 
   const userName =
     localStorage.getItem("userName") || "Student";
@@ -29,7 +50,9 @@ function Documents() {
 
   const handleLogout = () => {
     localStorage.removeItem("userName");
+    localStorage.removeItem("userEmail");
     localStorage.removeItem("token");
+    localStorage.removeItem("userRole");
 
     navigateTo("home");
   };
@@ -209,7 +232,12 @@ function Documents() {
       setError("");
 
       const response = await fetch(
-        `${API_BASE_URL}/api/documents`
+        `${API_BASE_URL}/api/documents`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+          },
+        }
       );
 
       const data =
@@ -239,7 +267,7 @@ function Documents() {
        */
       try {
         localStorage.setItem(
-          "recentDocuments",
+          recentDocumentsKey,
           JSON.stringify(
             documentList.slice(0, 10)
           )
@@ -266,16 +294,13 @@ function Documents() {
     fetchDocuments();
   }, []);
 
-  /* =========================
+   /* =========================
      SEARCH
   ========================= */
 
   const handleSearch = (event) => {
     event?.preventDefault();
-
-    setSearchQuery(
-      searchInput.trim()
-    );
+    setSearchQuery(searchInput.trim());
   };
 
   const handleClearSearch = () => {
@@ -283,42 +308,42 @@ function Documents() {
     setSearchQuery("");
   };
 
-  const filteredDocuments =
-    useMemo(() => {
-      const query =
-        searchQuery
-          .trim()
-          .toLowerCase();
+  // Automatically update search results while typing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchQuery(searchInput.trim());
+    }, 200);
 
-      if (!query) {
-        return documents;
-      }
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
-      return documents.filter(
-        (document) => {
-          const name =
-            document.name
-              ?.toLowerCase() || "";
+  /* =========================
+     FILTERED DOCUMENTS
+  ========================= */
 
-          const type =
-            document.type
-              ?.toLowerCase() || "";
+  const filteredDocuments = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
 
-          const fileName =
-            document.fileName
-              ?.toLowerCase() || "";
+    if (!query) {
+      return documents;
+    }
 
-          return (
-            name.includes(query) ||
-            type.includes(query) ||
-            fileName.includes(query)
-          );
-        }
+    return documents.filter((document) => {
+      const searchableFields = [
+        document.name,
+        document.fileName,
+        document.originalName,
+        document.type,
+        document.status,
+      ];
+
+      return searchableFields.some((field) =>
+        String(field || "")
+          .toLowerCase()
+          .includes(query)
       );
-    }, [
-      documents,
-      searchQuery,
-    ]);
+    });
+  }, [documents, searchQuery]);
 
   /* =========================
      RECENT OPEN DOCUMENTS
@@ -355,6 +380,9 @@ function Documents() {
             `${API_BASE_URL}/api/documents/${documentId}/open`,
             {
               method: "PATCH",
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+              },
             }
           );
 
@@ -437,7 +465,7 @@ function Documents() {
             const existing =
               JSON.parse(
                 localStorage.getItem(
-                  "recentDocuments"
+                  recentDocumentsKey
                 )
               ) || [];
 
@@ -455,7 +483,7 @@ function Documents() {
             ].slice(0, 10);
 
             localStorage.setItem(
-              "recentDocuments",
+              recentDocumentsKey,
               JSON.stringify(updated)
             );
           } catch {
@@ -527,6 +555,9 @@ function Documents() {
             `${API_BASE_URL}/api/documents/${documentId}`,
             {
               method: "DELETE",
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+              },
             }
           );
 
@@ -557,7 +588,7 @@ function Documents() {
           const recentDocuments =
             JSON.parse(
               localStorage.getItem(
-                "recentDocuments"
+                recentDocumentsKey
               )
             ) || [];
 
@@ -569,7 +600,7 @@ function Documents() {
             );
 
           localStorage.setItem(
-            "recentDocuments",
+            recentDocumentsKey,
             JSON.stringify(
               updatedDocuments
             )
@@ -1077,7 +1108,7 @@ function Documents() {
           ) : filteredDocuments.length >
             0 ? (
 
-            <section className="documents-list">
+            <section className={`documents-list ${documentView === "grid" ? "grid-view" : "list-view"}`}>
 
               {filteredDocuments.map(
                 (document) => {
@@ -1098,7 +1129,7 @@ function Documents() {
 
                   return (
                     <article
-                      className="document-card"
+                      className={`document-card ${documentView === "grid" ? "grid-view-card" : "list-view-card"}`}
                       key={
                         document.id ||
                         document.name

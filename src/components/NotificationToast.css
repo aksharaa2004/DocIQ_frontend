@@ -1,0 +1,52 @@
+.dociq-notification {
+  position: fixed;
+  z-index: 2000;
+  top: 22px;
+  right: 24px;
+  width: min(390px, calc(100vw - 32px));
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #e8d9e9;
+  border-radius: 14px;
+  background: #fff;
+  color: #30243b;
+  box-shadow: 0 12px 36px rgba(48, 36, 59, 0.18);
+  animation: dociq-notification-enter 180ms ease-out;
+}
+
+.dociq-notification-icon {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #e8f5ec;
+  color: #267344;
+  font-weight: 800;
+}
+
+.dociq-notification-copy { flex: 1; min-width: 0; }
+.dociq-notification-copy strong { display: block; margin: 2px 0 4px; font-size: 15px; }
+.dociq-notification-copy p { color: #665968; font-size: 14px; line-height: 1.5; }
+.dociq-notification > button { border: 0; background: transparent; color: #766879; font-size: 22px; line-height: 1; }
+
+html[data-dociq-theme="dark"] .dociq-notification {
+  border-color: #493d4c;
+  background: #241e28;
+  color: #f5edf6;
+}
+
+html[data-dociq-theme="dark"] .dociq-notification-copy p { color: #c1b2c3; }
+html[data-dociq-theme="dark"] .dociq-notification > button { color: #c1b2c3; }
+
+@keyframes dociq-notification-enter {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dociq-notification { animation: none; }
+}

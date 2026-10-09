@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./Login.css";
 
 function Login() {
@@ -8,6 +8,20 @@ function Login() {
 
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const query = window.location.hash.split("?")[1] || "";
+    const params = new URLSearchParams(query);
+
+    if (params.get("error") === "google_failed") {
+      setMessage("Google sign-in failed. Please try again.");
+      window.history.replaceState(
+        window.history.state,
+        "",
+        `${window.location.pathname}${window.location.search}#login`,
+      );
+    }
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -32,11 +46,14 @@ function Login() {
 
       if (response.ok) {
         localStorage.setItem("userName", data.user.name);
+        localStorage.setItem("userEmail", data.user.email);
+        localStorage.setItem("userRole", data.user.role || "user");
+        if (data.token) localStorage.setItem("token", data.token);
 
         setMessage(`Welcome, ${data.user.name}! Login successful.`);
 
         setTimeout(() => {
-          window.location.hash = "dashboard";
+          window.location.hash = data.user.role === "admin" ? "admin" : "dashboard";
         }, 1500);
       } else {
         setMessage(data.message || "Invalid email or password.");
@@ -326,6 +343,9 @@ function Login() {
           <button
             className="google-login-button"
             type="button"
+            onClick={() => {
+              window.location.href = "http://localhost:5000/api/auth/google";
+            }}
           >
             <span className="google-icon">
               G

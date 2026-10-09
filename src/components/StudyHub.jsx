@@ -3,6 +3,7 @@ import {
   useState,
 } from "react";
 
+import { notifyDocIQ } from "../utils/notifications";
 import "./StudyHub.css";
 
 
@@ -237,7 +238,12 @@ function StudyHubHome({
 
         const response =
           await fetch(
-            "http://localhost:5000/api/documents"
+            "http://localhost:5000/api/documents",
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+              },
+            }
           );
 
         const data =
@@ -889,7 +895,12 @@ function StudyDocument({
 
         const response =
           await fetch(
-            `http://localhost:5000/api/documents/${documentId}`
+            `http://localhost:5000/api/documents/${documentId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+              },
+            }
           );
 
         const data =
@@ -934,7 +945,11 @@ function StudyDocument({
 
   useEffect(() => {
     let active = true;
-    fetch("http://localhost:5000/api/documents")
+    fetch("http://localhost:5000/api/documents", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+      },
+    })
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || "Unable to load document list.");
@@ -994,6 +1009,7 @@ function StudyDocument({
             headers: {
               "Content-Type":
                 "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
             },
           }
         );
@@ -1025,6 +1041,7 @@ function StudyDocument({
       setQuestions(
         data.questions
       );
+      notifyDocIQ("aiGeneration", "Practice questions ready", "Your AI generated exam questions are ready.");
 
     } catch (error) {
 
@@ -1056,12 +1073,16 @@ function StudyDocument({
     try {
       const response = await fetch(`http://localhost:5000/api/ai/short-notes/${documentId}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+        },
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Unable to generate short notes.");
       if (!Array.isArray(data.notes)) throw new Error("The AI returned notes in an unexpected format.");
       setShortNotes(data.notes);
+      notifyDocIQ("aiGeneration", "Short notes ready", "Your AI generated short notes are ready.");
     } catch (error) {
       console.error("Short-note generation error:", error);
       setNotesError(error.message || "Unable to generate short notes. Please try again.");
@@ -1081,7 +1102,10 @@ function StudyDocument({
     try {
       const response = await fetch(`http://localhost:5000/api/ai/flashcards/${documentId}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+        },
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Unable to generate flashcards.");
@@ -1093,6 +1117,7 @@ function StudyDocument({
       );
       if (!validCards.length) throw new Error("The AI returned flashcards in an unexpected format.");
       setFlashcards(validCards);
+      notifyDocIQ("aiGeneration", "Flashcards ready", "Your AI generated flashcards are ready.");
     } catch (error) {
       console.error("Flashcard generation error:", error);
       setFlashcardsError(error.message || "Unable to generate flashcards. Please try again.");
@@ -1165,6 +1190,7 @@ function StudyDocument({
             headers: {
               "Content-Type":
                 "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
             },
 
             body:
@@ -1200,6 +1226,7 @@ function StudyDocument({
       setEvaluation(
         data.evaluation
       );
+      notifyDocIQ("studyMode", "Practice feedback ready", "Your answer evaluation is ready.");
 
     } catch (error) {
 

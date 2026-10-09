@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./Upload.css";
 
 const API_BASE_URL = "http://localhost:5000";
@@ -9,18 +9,41 @@ function Upload() {
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("");
+  const recentDocumentsKey = `recentDocuments:${(localStorage.getItem("userEmail") || "").trim().toLowerCase() || "anonymous"}`;
 
   const [recentDocuments, setRecentDocuments] = useState(() => {
     try {
       return (
         JSON.parse(
-          localStorage.getItem("recentDocuments")
+          localStorage.getItem(recentDocumentsKey)
         ) || []
       );
     } catch {
       return [];
     }
   });
+
+  useEffect(() => {
+    let active = true;
+    fetch(`${API_BASE_URL}/api/documents`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+      },
+    })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || "Unable to load documents.");
+        return Array.isArray(data.documents) ? data.documents : [];
+      })
+      .then((documents) => {
+        if (!active) return;
+        setRecentDocuments(documents);
+        localStorage.setItem(recentDocumentsKey, JSON.stringify(documents.slice(0, 10)));
+      })
+      .catch(() => {});
+
+    return () => { active = false; };
+  }, [recentDocumentsKey]);
 
   const userName =
     localStorage.getItem("userName") || "Student";
@@ -49,7 +72,9 @@ function Upload() {
 
   const handleLogout = () => {
     localStorage.removeItem("userName");
+    localStorage.removeItem("userEmail");
     localStorage.removeItem("token");
+    localStorage.removeItem("userRole");
     window.location.hash = "home";
   };
 
@@ -272,6 +297,9 @@ function Upload() {
         `${API_BASE_URL}/api/upload`,
         {
           method: "POST",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+          },
           body: formData,
         }
       );
@@ -324,7 +352,7 @@ function Upload() {
       );
 
       localStorage.setItem(
-        "recentDocuments",
+        recentDocumentsKey,
         JSON.stringify(
           updatedDocuments
         )

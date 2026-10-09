@@ -83,7 +83,12 @@ export default function AIAssistant() {
       inFlight = true;
       const controller = new AbortController();
       const timeout = window.setTimeout(() => controller.abort(), 8000);
-      fetch(`${API_BASE_URL}/api/documents`, { signal: controller.signal })
+      fetch(`${API_BASE_URL}/api/documents`, {
+        signal: controller.signal,
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+        },
+      })
         .then((response) => response.json())
         .then((data) => {
           if (!data.documents) throw new Error(data.message || "Could not load your documents.");
@@ -121,7 +126,10 @@ export default function AIAssistant() {
     try {
       const response = await fetch(`${API_BASE_URL}/api/assistant/chat`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+        },
         body: JSON.stringify({
           messages: history
             .filter((message) => message.key !== "welcome")
@@ -194,6 +202,8 @@ export default function AIAssistant() {
             type="button"
             onClick={() => {
               localStorage.removeItem("userName");
+              localStorage.removeItem("userEmail");
+              localStorage.removeItem("userRole");
               localStorage.removeItem("token");
               window.location.hash = "home";
             }}

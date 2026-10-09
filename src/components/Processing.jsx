@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { notifyDocIQ } from "../utils/notifications";
 import "./Processing.css";
 
 const API_BASE_URL = "http://localhost:5000";
@@ -6,6 +7,7 @@ const API_BASE_URL = "http://localhost:5000";
 function Processing() {
   const [status, setStatus] = useState("processing");
   const [error, setError] = useState("");
+  const notifiedStatus = useRef(null);
 
   const documentId = useMemo(() => {
     const hash = window.location.hash || "";
@@ -32,7 +34,12 @@ function Processing() {
     const checkStatus = async () => {
       try {
         const response = await fetch(
-          `${API_BASE_URL}/api/documents/${documentId}/status`
+          `${API_BASE_URL}/api/documents/${documentId}/status`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+            },
+          }
         );
 
         const data = await response.json();
@@ -46,6 +53,10 @@ function Processing() {
         setStatus(data.status);
 
         if (data.status === "ready") {
+          if (notifiedStatus.current !== "ready") {
+            notifiedStatus.current = "ready";
+            notifyDocIQ("documentProcessing", "Document ready", "Your document has finished processing and is ready to read.");
+          }
           clearInterval(intervalId);
 
           setTimeout(() => {
@@ -54,6 +65,10 @@ function Processing() {
         }
 
         if (data.status === "failed") {
+          if (notifiedStatus.current !== "failed") {
+            notifiedStatus.current = "failed";
+            notifyDocIQ("documentProcessing", "Processing failed", data.message || "DocIQ could not process your document.");
+          }
           clearInterval(intervalId);
           setError(
             data.message || "DocIQ could not process this document."

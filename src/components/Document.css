@@ -564,6 +564,13 @@
   gap: 10px;
 }
 
+.documents-list.grid-view {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 310px), 1fr));
+  align-items: stretch;
+  gap: 14px;
+}
+
 .document-card {
   min-height: 78px;
   display: flex;
@@ -576,6 +583,19 @@
   border-radius: 13px;
   background: white;
   transition: 0.25s ease;
+}
+
+.documents-list.grid-view .document-card {
+  min-height: 190px;
+  align-items: stretch;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.documents-list.grid-view .document-card-actions {
+  width: 100%;
+  flex-wrap: wrap;
+  justify-content: flex-start;
 }
 
 .document-card:hover {
@@ -1132,6 +1152,10 @@
 
   .document-card-main {
     width: 100%;
+  }
+
+  .documents-list.grid-view {
+    grid-template-columns: 1fr;
   }
 
   .document-details h3 {
