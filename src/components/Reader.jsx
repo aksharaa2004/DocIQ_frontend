@@ -35,6 +35,14 @@ const SPEECH_LANGUAGE_CODES = {
   Russian: "ru-RU",
 };
 
+function splitTranslationText(sourceText, maxLength = 2500) {
+  const chunks = [];
+  for (let offset = 0; offset < sourceText.length; offset += maxLength) {
+    chunks.push(sourceText.slice(offset, offset + maxLength));
+  }
+  return chunks;
+}
+
 function Reader({ documentId }) {
   // =========================================================
   // USER
@@ -48,6 +56,10 @@ function Reader({ documentId }) {
   // =========================================================
 
   const [documentData, setDocumentData] = useState(null);
+  const [showOriginalPdf, setShowOriginalPdf] = useState(false);
+  const [originalPdfBlobUrl, setOriginalPdfBlobUrl] = useState("");
+  const [originalPdfLoading, setOriginalPdfLoading] = useState(false);
+  const [originalPdfError, setOriginalPdfError] = useState("");
   const [loading, setLoading] = useState(Boolean(documentId));
   const [error, setError] = useState(
     documentId ? "" : "No document was selected."
@@ -67,6 +79,7 @@ function Reader({ documentId }) {
   const [zoom, setZoom] = useState(100);
   const [bookmarks, setBookmarks] = useState([]);
   const [highlights, setHighlights] = useState([]);
+  const selectedReaderTextRef = useRef("");
   const selectionInfoRef = useRef(null);
   const [selectionHighlightPosition, setSelectionHighlightPosition] =
     useState(null);
@@ -76,7 +89,7 @@ function Reader({ documentId }) {
     const dismissSelectionHighlight = (event) => {
       if (
         event?.target?.closest?.(
-          ".reader-selection-highlight-action, .reader-highlight-button"
+          ".reader-selection-highlight-action, .reader-highlight-button, .reader-translate-button"
         )
       ) {
         return;
@@ -134,6 +147,31 @@ function Reader({ documentId }) {
         "keydown",
         handleKeyDown
       );
+    };
+  }, []);
+
+  useEffect(() => {
+    const rememberReaderSelection = () => {
+      const selection = window.getSelection();
+      if (!selection) return;
+
+      const anchor = selection.anchorNode;
+      const anchorElement = anchor?.nodeType === Node.ELEMENT_NODE
+        ? anchor
+        : anchor?.parentElement;
+
+      if (!anchorElement?.closest(".reader-page-text")) return;
+      selectedReaderTextRef.current = selection.toString().trim();
+    };
+
+    document.addEventListener("mouseup", rememberReaderSelection);
+    document.addEventListener("keyup", rememberReaderSelection);
+    document.addEventListener("selectionchange", rememberReaderSelection);
+
+    return () => {
+      document.removeEventListener("mouseup", rememberReaderSelection);
+      document.removeEventListener("keyup", rememberReaderSelection);
+      document.removeEventListener("selectionchange", rememberReaderSelection);
     };
   }, []);
 
@@ -289,6 +327,15 @@ function Reader({ documentId }) {
     documentData?.data?.title ||
     "Untitled Document";
 
+  const documentFileName =
+    documentData?.fileName || documentTitle;
+  const isPdfDocument =
+    String(
+      documentData?.fileType ||
+        documentFileName.split(".").pop() || ""
+    ).toLowerCase() === "pdf";
+  const originalPdfUrl = originalPdfBlobUrl;
+
   // =========================================================
   // GET FILE TYPE
   // =========================================================
@@ -338,6 +385,7 @@ function Reader({ documentId }) {
 
         if (!cancelled) {
           setDocumentData(data);
+          setShowOriginalPdf(false);
 
           const loadedBookmarks =
             data.bookmarks ||
@@ -384,6 +432,49 @@ function Reader({ documentId }) {
       cancelled = true;
     };
   }, [documentId]);
+
+  useEffect(() => {
+    if (!documentId || !isPdfDocument || !showOriginalPdf) {
+      setOriginalPdfBlobUrl("");
+      setOriginalPdfError("");
+      return undefined;
+    }
+
+    let cancelled = false;
+    let createdUrl = "";
+    setOriginalPdfLoading(true);
+    setOriginalPdfError("");
+    setOriginalPdfBlobUrl("");
+
+    fetch(`${API_BASE_URL}/api/documents/${documentId}/original`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+      },
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.message || "Could not open the original PDF.");
+        }
+        return response.blob();
+      })
+      .then((blob) => {
+        if (cancelled) return;
+        createdUrl = URL.createObjectURL(blob);
+        setOriginalPdfBlobUrl(createdUrl);
+      })
+      .catch((error) => {
+        if (!cancelled) setOriginalPdfError(error.message);
+      })
+      .finally(() => {
+        if (!cancelled) setOriginalPdfLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+      if (createdUrl) URL.revokeObjectURL(createdUrl);
+    };
+  }, [documentId, isPdfDocument, showOriginalPdf]);
 
   // =========================================================
   // LOAD TTS VOICES
@@ -1071,7 +1162,8 @@ function Reader({ documentId }) {
   // =========================================================
 
   const translateText = async (
-    source
+    source,
+    selectedTextOverride = ""
   ) => {
     const targetLanguage =
       translationLanguage;
@@ -1086,28 +1178,15 @@ function Reader({ documentId }) {
 
     if (source === "selection") {
       text =
-        window
-          .getSelection()
-          ?.toString()
-          .trim() || "";
+        selectedTextOverride ||
+        selectionInfoRef.current?.selectedText ||
+        window.getSelection()?.toString().trim() ||
+        selectedReaderTextRef.current;
 
       sourceLabel = "Selected text";
 
       if (text) {
-        const chunks = [];
-
-        for (
-          let offset = 0;
-          offset < text.length;
-          offset += 2500
-        ) {
-          chunks.push(
-            text.slice(
-              offset,
-              offset + 2500
-            )
-          );
-        }
+        const chunks = splitTranslationText(text);
 
         sections = chunks.map(
           (chunk, index) => ({
@@ -1154,20 +1233,7 @@ function Reader({ documentId }) {
               return [];
             }
 
-            const chunks = [];
-
-            for (
-              let offset = 0;
-              offset < pageText.length;
-              offset += 2500
-            ) {
-              chunks.push(
-                pageText.slice(
-                  offset,
-                  offset + 2500
-                )
-              );
-            }
+            const chunks = splitTranslationText(pageText);
 
             return chunks.map(
               (
@@ -1242,20 +1308,7 @@ function Reader({ documentId }) {
               return [];
             }
 
-            const chunks = [];
-
-            for (
-              let offset = 0;
-              offset < pageText.length;
-              offset += 2500
-            ) {
-              chunks.push(
-                pageText.slice(
-                  offset,
-                  offset + 2500
-                )
-              );
-            }
+            const chunks = splitTranslationText(pageText);
 
             return chunks.map(
               (
@@ -1419,6 +1472,10 @@ function Reader({ documentId }) {
           "\n\n"
         )
       );
+
+      if (source === "selection") {
+        selectedReaderTextRef.current = "";
+      }
 
       setShowTranslationResult(
         true
@@ -2769,6 +2826,13 @@ function Reader({ documentId }) {
       <main
         className="reader-content"
         onMouseUp={() => {
+          const immediateSelection =
+            getSelectionInfo();
+          if (immediateSelection) {
+            selectedReaderTextRef.current =
+              immediateSelection.selectedText;
+          }
+
           setTimeout(() => {
             const selectionInfo =
               getSelectionInfo();
@@ -2779,6 +2843,8 @@ function Reader({ documentId }) {
 
             selectionInfoRef.current =
               selectionInfo;
+            selectedReaderTextRef.current =
+              selectionInfo.selectedText;
 
             const selection =
               window.getSelection();
@@ -3276,8 +3342,9 @@ function Reader({ documentId }) {
               </div>
 
               <p className="reader-translation-subtitle">
-                Translate the current page or
-                selected text.
+                {isPdfDocument && showOriginalPdf
+                  ? "To translate selected text, switch to extracted text view first."
+                  : "Translate the current page or selected text."}
               </p>
             </div>
           </div>
@@ -3376,16 +3443,28 @@ function Reader({ documentId }) {
               onMouseDown={(event) =>
                 event.preventDefault()
               }
-              onClick={() =>
+              onClick={() => {
+                if (isPdfDocument && showOriginalPdf) {
+                  setShowOriginalPdf(false);
+                  setTranslationError(
+                    "Select text in the extracted text view, then choose Translate Selection."
+                  );
+                  setTranslation("");
+                  return;
+                }
+
                 translateText(
-                  "selection"
-                )
-              }
+                  "selection",
+                  selectedReaderTextRef.current
+                );
+              }}
               disabled={
                 translationLoading
               }
             >
-              Translate Selection
+              {isPdfDocument && showOriginalPdf
+                ? "Select text to translate"
+                : "Translate Selection"}
             </button>
           </div>
 
@@ -3662,7 +3741,31 @@ function Reader({ documentId }) {
         ==================================================== */}
 
         <section className="reader-document-area">
-          {pages.length === 0 ? (
+          {isPdfDocument && (
+            <div className="reader-document-view-switch">
+              <button
+                type="button"
+                className="reader-translate-button"
+                onClick={() => setShowOriginalPdf((show) => !show)}
+              >
+                {showOriginalPdf ? "Read extracted text" : "View original PDF layout"}
+              </button>
+            </div>
+          )}
+
+          {isPdfDocument && showOriginalPdf ? (
+            originalPdfUrl ? (
+              <iframe
+                className="reader-original-pdf"
+                src={`${originalPdfUrl}#toolbar=1&navpanes=1&view=FitH`}
+                title={`Original layout of ${documentTitle}`}
+              />
+            ) : (
+              <div className="reader-original-pdf-message" role={originalPdfError ? "alert" : "status"}>
+                {originalPdfError || (originalPdfLoading ? "Loading original PDF…" : "Preparing original PDF…")}
+              </div>
+            )
+          ) : pages.length === 0 ? (
             <div className="reader-no-pages">
               <h2>
                 No document text available

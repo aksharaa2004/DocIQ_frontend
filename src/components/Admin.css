@@ -56,7 +56,7 @@
   margin: 0 8px 30px;
   color: #fff;
   text-decoration: none;
-  font-size: 21px;
+  font-size: calc(21px * var(--dociq-text-scale, 1));
   font-weight: 850;
 }
 
@@ -74,14 +74,14 @@
 .admin-brand small {
   margin-left: auto;
   color: #d9c5dc;
-  font-size: 9px;
+  font-size: calc(9px * var(--dociq-text-scale, 1));
   letter-spacing: 1.1px;
 }
 
 .admin-nav-label {
   margin: 0 12px 9px;
   color: #cdb9d0;
-  font-size: 9px;
+  font-size: calc(9px * var(--dociq-text-scale, 1));
   font-weight: 850;
   letter-spacing: 1.3px;
 }
@@ -107,7 +107,7 @@
   background: transparent;
   color: #f8eff9;
   text-align: left;
-  font-size: 13px;
+  font-size: calc(13px * var(--dociq-text-scale, 1));
   font-weight: 650;
   cursor: pointer;
   transition:
@@ -122,7 +122,7 @@
   width: 21px;
   color: #f4ad91;
   text-align: center;
-  font-size: 17px;
+  font-size: calc(17px * var(--dociq-text-scale, 1));
 }
 
 .admin-sidebar nav button:hover {
@@ -173,14 +173,14 @@
 .admin-profile strong {
   overflow: hidden;
   color: #fff;
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .admin-profile small {
   color: #d3c4d5;
-  font-size: 10px;
+  font-size: calc(10px * var(--dociq-text-scale, 1));
 }
 
 .admin-logout {
@@ -232,7 +232,7 @@
 .admin-topbar > div > span,
 .admin-welcome > div > span {
   color: var(--admin-coral);
-  font-size: 10px;
+  font-size: calc(10px * var(--dociq-text-scale, 1));
   font-weight: 850;
   letter-spacing: 1.2px;
 }
@@ -240,7 +240,7 @@
 .admin-topbar h1 {
   margin-top: 4px;
   color: var(--admin-ink);
-  font-size: 28px;
+  font-size: calc(28px * var(--dociq-text-scale, 1));
   font-weight: 800;
   letter-spacing: -.5px;
 }
@@ -287,7 +287,7 @@
   gap: 14px;
   border: 1px solid;
   border-radius: 10px;
-  font-size: 13px;
+  font-size: calc(13px * var(--dociq-text-scale, 1));
 }
 
 .admin-alert button {
@@ -334,13 +334,13 @@
 .admin-welcome h2 {
   margin: 7px 0 5px;
   color: var(--admin-plum);
-  font-size: 22px;
+  font-size: calc(22px * var(--dociq-text-scale, 1));
   font-weight: 800;
 }
 
 .admin-welcome p {
   color: var(--admin-muted);
-  font-size: 13px;
+  font-size: calc(13px * var(--dociq-text-scale, 1));
 }
 
 .admin-welcome-mark {
@@ -351,7 +351,7 @@
   border-radius: 16px;
   background: #f9e2d8;
   color: var(--admin-plum);
-  font-size: 24px;
+  font-size: calc(24px * var(--dociq-text-scale, 1));
   box-shadow: 0 8px 25px rgba(75,37,79,.06);
 }
 
@@ -404,7 +404,7 @@ button.admin-stat-card:hover {
   border-radius: 13px;
   background: #f4eaf5;
   color: var(--admin-plum);
-  font-size: 19px;
+  font-size: calc(19px * var(--dociq-text-scale, 1));
 }
 
 .admin-stat-card:nth-child(2) .admin-stat-icon {
@@ -423,7 +423,7 @@ button.admin-stat-card:hover {
 
 .admin-stat-label {
   color: var(--admin-muted);
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
   font-weight: 700;
 }
 
@@ -431,7 +431,7 @@ button.admin-stat-card:hover {
   grid-column: 1 / -1;
   margin-top: 12px;
   color: var(--admin-ink);
-  font-size: 27px;
+  font-size: calc(27px * var(--dociq-text-scale, 1));
   font-weight: 800;
   letter-spacing: -.5px;
 }
@@ -440,7 +440,7 @@ button.admin-stat-card:hover {
   grid-column: 1 / -1;
   align-self: end;
   color: #938795;
-  font-size: 11px;
+  font-size: calc(11px * var(--dociq-text-scale, 1));
 }
 
 /* =========================
@@ -474,14 +474,14 @@ button.admin-stat-card:hover {
 
 .admin-panel-heading h2 {
   color: var(--admin-ink);
-  font-size: 17px;
+  font-size: calc(17px * var(--dociq-text-scale, 1));
   font-weight: 800;
 }
 
 .admin-panel-heading p {
   margin-top: 4px;
   color: var(--admin-muted);
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
   line-height: 1.45;
 }
 
@@ -490,7 +490,7 @@ button.admin-stat-card:hover {
   border: 0;
   background: transparent;
   color: var(--admin-coral);
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
   font-weight: 800;
   cursor: pointer;
 }
@@ -521,7 +521,7 @@ button.admin-stat-card:hover {
 .admin-list-row strong {
   overflow: hidden;
   color: var(--admin-ink);
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -529,7 +529,7 @@ button.admin-stat-card:hover {
 .admin-list-row small {
   overflow: hidden;
   color: var(--admin-muted);
-  font-size: 10px;
+  font-size: calc(10px * var(--dociq-text-scale, 1));
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -558,7 +558,7 @@ button.admin-stat-card:hover {
   align-items: center;
   padding: 4px 8px;
   border-radius: 100px;
-  font-size: 10px;
+  font-size: calc(10px * var(--dociq-text-scale, 1));
   font-weight: 800;
   text-transform: capitalize;
   white-space: nowrap;
@@ -592,7 +592,7 @@ button.admin-stat-card:hover {
 .admin-empty {
   padding: 22px 4px;
   color: var(--admin-muted);
-  font-size: 13px;
+  font-size: calc(13px * var(--dociq-text-scale, 1));
 }
 
 .admin-loading {
@@ -636,7 +636,7 @@ button.admin-stat-card:hover {
   outline: 0;
   background: transparent;
   color: var(--admin-ink);
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
 }
 
 .admin-search input::placeholder {
@@ -644,7 +644,7 @@ button.admin-stat-card:hover {
 }
 
 .admin-search > span {
-  font-size: 19px;
+  font-size: calc(19px * var(--dociq-text-scale, 1));
 }
 
 .admin-table-scroll {
@@ -677,7 +677,7 @@ button.admin-stat-card:hover {
   padding: 12px 10px;
   border-bottom: 1px solid var(--admin-border);
   color: var(--admin-muted);
-  font-size: 10px;
+  font-size: calc(10px * var(--dociq-text-scale, 1));
   letter-spacing: .45px;
   text-transform: uppercase;
   white-space: nowrap;
@@ -687,7 +687,7 @@ button.admin-stat-card:hover {
   padding: 14px 10px;
   border-bottom: 1px solid #f1ebee;
   color: #514654;
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
   vertical-align: middle;
 }
 
@@ -715,7 +715,7 @@ button.admin-stat-card:hover {
 .admin-table-scroll td > small {
   margin-top: 4px;
   color: var(--admin-muted);
-  font-size: 10px;
+  font-size: calc(10px * var(--dociq-text-scale, 1));
 }
 
 .admin-row-actions {
@@ -730,7 +730,7 @@ button.admin-stat-card:hover {
   border-radius: 7px;
   background: #fff;
   color: var(--admin-plum);
-  font-size: 10px;
+  font-size: calc(10px * var(--dociq-text-scale, 1));
   font-weight: 750;
   white-space: nowrap;
   cursor: pointer;
@@ -768,7 +768,7 @@ button.admin-stat-card:hover {
 
 .admin-muted {
   color: var(--admin-muted);
-  font-size: 11px;
+  font-size: calc(11px * var(--dociq-text-scale, 1));
 }
 
 /* =========================
@@ -797,12 +797,12 @@ button.admin-stat-card:hover {
 .admin-usage-row strong {
   overflow-wrap: anywhere;
   color: var(--admin-ink);
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
 }
 
 .admin-usage-row small {
   color: var(--admin-muted);
-  font-size: 10px;
+  font-size: calc(10px * var(--dociq-text-scale, 1));
 }
 
 .admin-usage-row > span {
@@ -847,7 +847,7 @@ button.admin-stat-card:hover {
 
 .admin-bar-item small {
   color: var(--admin-muted);
-  font-size: 9px;
+  font-size: calc(9px * var(--dociq-text-scale, 1));
 }
 /* =========================
    DASHBOARD CHARTS
@@ -883,7 +883,7 @@ button.admin-stat-card:hover {
 
 .admin-chart-y-labels span {
   color: #9a8d9c;
-  font-size: 9px;
+  font-size: calc(9px * var(--dociq-text-scale, 1));
 }
 
 .admin-chart-svg {
@@ -943,7 +943,7 @@ button.admin-stat-card:hover {
 
 .chart-labels span {
   color: #9a8d9c;
-  font-size: 9px;
+  font-size: calc(9px * var(--dociq-text-scale, 1));
 }
 
 
@@ -1033,14 +1033,14 @@ button.admin-stat-card:hover {
 
 .donut-center strong {
   color: var(--admin-plum);
-  font-size: 22px;
+  font-size: calc(22px * var(--dociq-text-scale, 1));
   font-weight: 850;
 }
 
 .donut-center span {
   margin-top: 2px;
   color: var(--admin-muted);
-  font-size: 9px;
+  font-size: calc(9px * var(--dociq-text-scale, 1));
   text-transform: uppercase;
   letter-spacing: 0.6px;
 }
@@ -1071,7 +1071,7 @@ button.admin-stat-card:hover {
   min-width: 0;
   overflow: hidden;
   color: var(--admin-ink);
-  font-size: 11px;
+  font-size: calc(11px * var(--dociq-text-scale, 1));
   font-weight: 750;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1081,7 +1081,7 @@ button.admin-stat-card:hover {
 .donut-legend-item strong {
   margin-left: auto;
   color: var(--admin-ink);
-  font-size: 11px;
+  font-size: calc(11px * var(--dociq-text-scale, 1));
   font-weight: 750;
 }
 
@@ -1207,7 +1207,7 @@ html[data-dociq-theme="dark"]
   min-height: 38px;
   border-bottom: 1px solid var(--admin-border);
   color: var(--admin-muted);
-  font-size: 9px;
+  font-size: calc(9px * var(--dociq-text-scale, 1));
   font-weight: 800;
   letter-spacing: .7px;
   text-transform: uppercase;
@@ -1239,7 +1239,7 @@ html[data-dociq-theme="dark"]
 .admin-activity-user strong {
   overflow: hidden;
   color: var(--admin-ink);
-  font-size: 11px;
+  font-size: calc(11px * var(--dociq-text-scale, 1));
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1247,28 +1247,28 @@ html[data-dociq-theme="dark"]
 .admin-activity-user small {
   overflow: hidden;
   color: var(--admin-muted);
-  font-size: 9px;
+  font-size: calc(9px * var(--dociq-text-scale, 1));
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .admin-activity-type {
   color: var(--admin-plum);
-  font-size: 10px;
+  font-size: calc(10px * var(--dociq-text-scale, 1));
   font-weight: 700;
 }
 
 .admin-activity-document {
   overflow: hidden;
   color: #5d5360;
-  font-size: 10px;
+  font-size: calc(10px * var(--dociq-text-scale, 1));
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .admin-activity-date {
   color: var(--admin-muted);
-  font-size: 9px;
+  font-size: calc(9px * var(--dociq-text-scale, 1));
 }
 
 /* =========================
@@ -1292,7 +1292,7 @@ html[data-dociq-theme="dark"]
 
 .admin-report-row span {
   color: var(--admin-muted);
-  font-size: 10px;
+  font-size: calc(10px * var(--dociq-text-scale, 1));
 }
 
 .admin-report-row div {
@@ -1311,7 +1311,7 @@ html[data-dociq-theme="dark"]
 
 .admin-report-row strong {
   color: var(--admin-ink);
-  font-size: 11px;
+  font-size: calc(11px * var(--dociq-text-scale, 1));
   text-align: right;
 }
 
@@ -1346,19 +1346,19 @@ html[data-dociq-theme="dark"]
 
 .admin-info-grid span {
   color: var(--admin-muted);
-  font-size: 11px;
+  font-size: calc(11px * var(--dociq-text-scale, 1));
 }
 
 .admin-info-grid strong {
   color: var(--admin-ink);
-  font-size: 13px;
+  font-size: calc(13px * var(--dociq-text-scale, 1));
   overflow-wrap: anywhere;
 }
 
 .admin-note {
   margin-top: 14px;
   color: var(--admin-muted);
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
   line-height: 1.6;
 }
 
@@ -1404,13 +1404,13 @@ html[data-dociq-theme="dark"]
 
 .admin-security-list strong {
   color: var(--admin-ink);
-  font-size: 13px;
+  font-size: calc(13px * var(--dociq-text-scale, 1));
 }
 
 .admin-security-list small {
   margin-top: 4px;
   color: var(--admin-muted);
-  font-size: 11px;
+  font-size: calc(11px * var(--dociq-text-scale, 1));
   line-height: 1.45;
 }
 
@@ -1443,19 +1443,19 @@ html[data-dociq-theme="dark"]
 
 .admin-help-grid article > span {
   color: var(--admin-coral);
-  font-size: 11px;
+  font-size: calc(11px * var(--dociq-text-scale, 1));
   font-weight: 850;
 }
 
 .admin-help-grid h3 {
   margin: 10px 0 7px;
   color: var(--admin-ink);
-  font-size: 14px;
+  font-size: calc(14px * var(--dociq-text-scale, 1));
 }
 
 .admin-help-grid p {
   color: var(--admin-muted);
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
   line-height: 1.6;
 }
 
@@ -1483,18 +1483,18 @@ html[data-dociq-theme="dark"]
 }
 
 .admin-access-card > span {
-  font-size: 35px;
+  font-size: calc(35px * var(--dociq-text-scale, 1));
 }
 
 .admin-access-card h1 {
   margin: 14px 0 8px;
   color: var(--admin-plum);
-  font-size: 23px;
+  font-size: calc(23px * var(--dociq-text-scale, 1));
 }
 
 .admin-access-card p {
   color: var(--admin-muted);
-  font-size: 14px;
+  font-size: calc(14px * var(--dociq-text-scale, 1));
   line-height: 1.5;
 }
 
@@ -1798,11 +1798,11 @@ html[data-dociq-theme="dark"] .admin-muted {
     justify-content: center;
     gap: 2px;
     padding: 4px;
-    font-size: 10px;
+    font-size: calc(10px * var(--dociq-text-scale, 1));
   }
 
   .admin-sidebar nav button > span {
-    font-size: 15px;
+    font-size: calc(15px * var(--dociq-text-scale, 1));
   }
 
   .admin-main {
@@ -1814,7 +1814,7 @@ html[data-dociq-theme="dark"] .admin-muted {
   }
 
   .admin-topbar h1 {
-    font-size: 23px;
+    font-size: calc(23px * var(--dociq-text-scale, 1));
   }
 
   .admin-refresh span {
@@ -1883,11 +1883,11 @@ html[data-dociq-theme="dark"] .admin-muted {
   }
 
   .admin-topbar h1 {
-    font-size: 21px;
+    font-size: calc(21px * var(--dociq-text-scale, 1));
   }
 
   .admin-welcome h2 {
-    font-size: 19px;
+    font-size: calc(19px * var(--dociq-text-scale, 1));
   }
 
   .admin-welcome {
@@ -2102,7 +2102,7 @@ html[data-dociq-theme="dark"] .admin-chart-svg .chart-point {
   background: var(--admin-coral-soft);
   color: var(--admin-plum);
 
-  font-size: 17px;
+  font-size: calc(17px * var(--dociq-text-scale, 1));
   font-weight: 700;
 }
 
@@ -2115,13 +2115,13 @@ html[data-dociq-theme="dark"] .admin-chart-svg .chart-point {
 
 .admin-mini-card > div:last-child > span {
   color: var(--admin-muted);
-  font-size: 11px;
+  font-size: calc(11px * var(--dociq-text-scale, 1));
   font-weight: 600;
 }
 
 .admin-mini-card > div:last-child > strong {
   color: var(--admin-ink);
-  font-size: 18px;
+  font-size: calc(18px * var(--dociq-text-scale, 1));
   font-weight: 800;
 }
 

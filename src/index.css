@@ -41,3 +41,20 @@ img {
 #root {
   min-height: 100vh;
 }
+
+.dociq-app-root {
+  --dociq-text-scale: 1;
+  font-size: calc(16px * var(--dociq-text-scale));
+}
+
+.dociq-app-root[data-text-size="small"] {
+  --dociq-text-scale: 0.92;
+}
+
+.dociq-app-root[data-text-size="large"] {
+  --dociq-text-scale: 1.1;
+}
+
+.dociq-app-root[data-text-size="extra-large"] {
+  --dociq-text-scale: 1.22;
+}

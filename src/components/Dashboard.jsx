@@ -14,6 +14,17 @@ function Dashboard() {
       return [];
     }
   });
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const searchResults = searchQuery.trim()
+    ? recentFiles.filter((file) =>
+        [file.name, file.fileName, file.type]
+          .filter(Boolean)
+          .some((value) =>
+            String(value).toLocaleLowerCase().includes(searchQuery.trim().toLocaleLowerCase())
+          )
+      ).slice(0, 8)
+    : [];
 
   useEffect(() => {
     let active = true;
@@ -255,7 +266,42 @@ function Dashboard() {
             <input
               type="text"
               placeholder="Search your documents..."
+              aria-label="Search your documents"
+              aria-autocomplete="list"
+              aria-expanded={Boolean(searchQuery.trim())}
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") setSearchQuery("");
+                if (event.key === "Enter" && searchResults[0]?.id) {
+                  navigateTo(`reader/${searchResults[0].id}`);
+                }
+              }}
             />
+
+            {searchQuery.trim() && (
+              <div className="dashboard-search-results" role="listbox">
+                {searchResults.length ? searchResults.map((file) => (
+                  <button
+                    key={file.id}
+                    type="button"
+                    role="option"
+                    aria-selected="false"
+                    onClick={() => navigateTo(`reader/${file.id}`)}
+                  >
+                    <span className="dashboard-search-result-icon" aria-hidden="true">
+                      {getFileIcon(file.name || file.fileName)}
+                    </span>
+                    <span className="dashboard-search-result-name">{file.name || file.fileName}</span>
+                    <span className="dashboard-search-result-type">{file.type || "FILE"}</span>
+                  </button>
+                )) : (
+                  <div className="dashboard-search-no-results" role="status">
+                    No documents match “{searchQuery.trim()}”.
+                  </div>
+                )}
+              </div>
+            )}
 
           </div>
 
@@ -526,7 +572,7 @@ function Dashboard() {
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          fontSize: "18px"
+                          fontSize: "calc(18px * var(--dociq-text-scale, 1))"
                         }}
                       >
                         {getFileIcon(file.name)}
@@ -539,7 +585,7 @@ function Dashboard() {
                         <strong
                           style={{
                             display: "block",
-                            fontSize: "14px",
+                            fontSize: "calc(14px * var(--dociq-text-scale, 1))",
                             color: "#1e293b"
                           }}
                         >
@@ -548,7 +594,7 @@ function Dashboard() {
 
                         <span
                           style={{
-                            fontSize: "12px",
+                            fontSize: "calc(12px * var(--dociq-text-scale, 1))",
                             color: "#64748b"
                           }}
                         >
@@ -576,7 +622,7 @@ function Dashboard() {
                         <span
                           title="Bookmarked"
                           style={{
-                            fontSize: "16px"
+                            fontSize: "calc(16px * var(--dociq-text-scale, 1))"
                           }}
                         >
                           🔖
@@ -593,7 +639,7 @@ function Dashboard() {
                           borderRadius: "6px",
                           cursor: "pointer",
                           fontWeight: "600",
-                          fontSize: "13px"
+                          fontSize: "calc(13px * var(--dociq-text-scale, 1))"
                         }}
                         onClick={() => {
                           navigateTo(`reader/${file.id}`);

@@ -4,6 +4,7 @@ import { marked } from "marked";
 import DOMPurify from "dompurify";
 import "./Upload.css";
 import "./AIAssistant.css";
+import "./PageBanner.css";
 
 const API_BASE_URL = "http://localhost:5000";
 const makeWelcomeMessage = (documentId = "") => ({
@@ -49,6 +50,8 @@ export default function AIAssistant() {
   const [documentsLoading, setDocumentsLoading] = useState(true);
   const [documentsError, setDocumentsError] = useState("");
   const scrollRef = useRef(null);
+  const senderRef = useRef(null);
+  const loadingRef = useRef(false);
   const conversationsRef = useRef(initialConversations);
   const selectedDocumentNameRef = useRef(currentConversation?.documentName || "");
 
@@ -110,13 +113,15 @@ export default function AIAssistant() {
   }, []);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+    const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior });
   }, [messages, loading]);
 
   const sendMessage = async (value) => {
     const content = value.trim();
-    if (!content || loading) return;
+    if (!content || loadingRef.current) return;
 
+    loadingRef.current = true;
     setDraft("");
     const history = [...messages, { key: `${Date.now()}`, role: "user", content }];
     setMessages(history);
@@ -147,8 +152,13 @@ export default function AIAssistant() {
     } catch (sendError) {
       setError(sendError.message || "Unable to reach the assistant. Please try again.");
     } finally {
+      loadingRef.current = false;
       setLoading(false);
     }
+  };
+
+  const focusMessageInput = () => {
+    senderRef.current?.inputElement?.focus();
   };
 
   const startNewConversation = (documentId = "") => {
@@ -230,14 +240,17 @@ export default function AIAssistant() {
             <div className="upload-user-text"><strong>{userName}</strong><span>Student</span></div>
           </div>
         </div>
+        <br></br>
 
-        <section className="upload-heading assistant-page-heading">
-          <div className="upload-eyebrow">AI-POWERED LEARNING</div>
-          <div className="assistant-title-row">
-            <h1>AI Assistant</h1>
-            <span className="assistant-provider">Powered by Groq</span>
+        <section className="upload-heading assistant-page-heading dociq-page-banner">
+          <div className="dociq-page-banner-copy">
+            <div className="upload-eyebrow dociq-page-banner-eyebrow">AI-POWERED LEARNING</div>
+            <div className="assistant-title-row">
+              <h1>Learn Smarter with AI</h1>
+              <span className="assistant-provider">Powered by Groq</span>
+            </div>
+            <p>Ask questions, summarize, and understand your documents with DocIQ.</p>
           </div>
-          <p>Ask questions or choose a document to study with DocIQ.</p>
         </section>
 
       <section className="assistant-chat" aria-label="Chat with the AI assistant">
@@ -325,7 +338,33 @@ export default function AIAssistant() {
         </div>
         {error && <p className="assistant-error" role="alert">{error}</p>}
         <div className="assistant-composer">
+          <div className="assistant-quick-actions" role="group" aria-label="Quick document actions">
+            <button
+              type="button"
+              disabled={!selectedDocumentId || loading}
+              title={selectedDocumentId ? "Summarize the selected document" : "Select a document first"}
+              onClick={() => sendMessage("Please summarize the selected document, highlighting its main ideas, key details, and conclusions.")}
+            >
+              Summarize document
+            </button>
+            <button
+              type="button"
+              disabled={!selectedDocumentId || loading}
+              title={selectedDocumentId ? "Explain the selected document in simple language" : "Select a document first"}
+              onClick={() => sendMessage("Please explain the selected document in simple language, defining any important terms.")}
+            >
+              Explain simply
+            </button>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={focusMessageInput}
+            >
+              Ask about document
+            </button>
+          </div>
           <Sender
+            ref={senderRef}
             value={draft}
             onChange={setDraft}
             placeholder="Message your study assistant…"

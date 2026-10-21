@@ -470,7 +470,6 @@ function Settings() {
         settings.comfortableReading ? "settings-comfortable" : ""
       }`}
       data-theme={resolvedTheme}
-      data-text-size={settings.textSize}
       data-reading-width={settings.readingWidth}
       data-paragraph-spacing={settings.paragraphSpacing}
       style={{ "--settings-zoom": `${settings.zoom}%` }}
@@ -765,9 +764,15 @@ function Settings() {
                   <select
                     id="text-size"
                     value={settings.textSize}
-                    onChange={(event) =>
-                      updateSetting("textSize", event.target.value)
-                    }
+                    onChange={(event) => {
+                      const textSize = event.target.value;
+                      updateSetting("textSize", textSize);
+                      window.dispatchEvent(
+                        new CustomEvent("dociq-text-size-change", {
+                          detail: textSize,
+                        })
+                      );
+                    }}
                   >
                     <option value="small">Small</option>
                     <option value="normal">Default</option>

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./Document.css";
+import "./PageBanner.css";
 
 const API_BASE_URL = "http://localhost:5000";
 const SETTINGS_KEY = "dociq.settings";
@@ -17,8 +18,12 @@ function getSavedDocumentView() {
 function Documents() {
   const recentDocumentsKey = `recentDocuments:${(localStorage.getItem("userEmail") || "").trim().toLowerCase() || "anonymous"}`;
   const [documents, setDocuments] = useState([]);
-  const [searchInput, setSearchInput] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState(
+    () => localStorage.getItem("documentSearchQuery") || ""
+  );
+  const [searchQuery, setSearchQuery] = useState(
+    () => (localStorage.getItem("documentSearchQuery") || "").trim()
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState(null);
@@ -292,6 +297,21 @@ function Documents() {
 
   useEffect(() => {
     fetchDocuments();
+  }, []);
+
+  useEffect(() => {
+    const applySavedSearch = () => {
+      const query = localStorage.getItem("documentSearchQuery") || "";
+      setSearchInput(query);
+      setSearchQuery(query.trim());
+      localStorage.removeItem("documentSearchQuery");
+    };
+
+    localStorage.removeItem("documentSearchQuery");
+    window.addEventListener("document-search-updated", applySavedSearch);
+    return () => {
+      window.removeEventListener("document-search-updated", applySavedSearch);
+    };
   }, []);
 
    /* =========================
@@ -787,24 +807,24 @@ function Documents() {
 
         </div>
 
+        <br></br>
+
         {/* PAGE HEADER */}
 
-        <section className="documents-header">
+        <section className="documents-header dociq-page-banner">
 
-          <div>
+          <div className="dociq-page-banner-copy">
 
-            <span className="documents-eyebrow">
+            <span className="documents-eyebrow dociq-page-banner-eyebrow">
               YOUR LIBRARY
             </span>
 
             <h1>
-              My Documents
+              Your Documents, All in One Place
             </h1>
 
             <p>
-              Access, read, search,
-              and study your
-              uploaded documents.
+              Access, read, search, and manage your uploaded documents.
             </p>
 
           </div>

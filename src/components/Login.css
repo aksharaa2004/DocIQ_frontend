@@ -47,7 +47,7 @@
   display: inline-flex;
   align-items: center;
   gap: 12px;
-  font-size: 28px;
+  font-size: calc(28px * var(--dociq-text-scale, 1));
   font-weight: 800;
   color: #ffffff;
 }
@@ -60,7 +60,7 @@
   border-radius: 14px;
   background: #f28c68;
   color: #ffffff;
-  font-size: 28px;
+  font-size: calc(28px * var(--dociq-text-scale, 1));
   box-shadow: 0 8px 22px rgba(242, 140, 104, 0.28);
   animation: iconFloat 4s ease-in-out infinite;
 }
@@ -80,7 +80,7 @@
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
   color: #ffe1d5;
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
   font-weight: 800;
   letter-spacing: 1.4px;
 }
@@ -88,7 +88,7 @@
 .login-message h1 {
   margin-top: 22px;
   color: #ffffff;
-  font-size: clamp(42px, 4vw, 70px);
+  font-size: calc(clamp(42px, 4vw, 70px) * var(--dociq-text-scale, 1));
   line-height: 1.08;
   letter-spacing: -2.5px;
   font-weight: 850;
@@ -102,7 +102,7 @@
   max-width: 490px;
   margin-top: 28px;
   color: #ead9e8;
-  font-size: 17px;
+  font-size: calc(17px * var(--dociq-text-scale, 1));
   line-height: 1.8;
 }
 
@@ -136,7 +136,7 @@
   border-radius: 13px;
   background: #f28c68;
   color: #ffffff;
-  font-size: 23px;
+  font-size: calc(23px * var(--dociq-text-scale, 1));
 }
 
 .login-ai-header strong,
@@ -146,13 +146,13 @@
 
 .login-ai-header strong {
   color: #ffffff;
-  font-size: 15px;
+  font-size: calc(15px * var(--dociq-text-scale, 1));
 }
 
 .login-ai-header span {
   margin-top: 4px;
   color: #d9c4d7;
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
 }
 
 .login-online {
@@ -189,7 +189,7 @@
   border-radius: 10px;
   background: #fff1eb;
   color: #d96f4e;
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
   font-weight: 900;
   box-shadow: 0 8px 20px rgba(20, 5, 25, 0.1);
 }
@@ -206,7 +206,7 @@
 .login-document-info strong {
   overflow: hidden;
   color: #ffffff;
-  font-size: 14px;
+  font-size: calc(14px * var(--dociq-text-scale, 1));
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -214,7 +214,7 @@
 .login-document-info span {
   margin-top: 7px;
   color: #d9c4d7;
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
 }
 
 /* AI result */
@@ -247,19 +247,19 @@
 }
 
 .login-ai-result strong {
-  font-size: 14px;
+  font-size: calc(14px * var(--dociq-text-scale, 1));
 }
 
 .login-ai-result span {
   margin-top: 4px;
   color: #8d7d8b;
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
 }
 
 .result-check {
   margin-left: auto;
   color: #3d9c69;
-  font-size: 20px;
+  font-size: calc(20px * var(--dociq-text-scale, 1));
   font-weight: 800;
 }
 
@@ -343,13 +343,13 @@
   border-radius: 14px;
   background: #fce0d5;
   color: #d96f4e;
-  font-size: 24px;
+  font-size: calc(24px * var(--dociq-text-scale, 1));
   animation: iconFloat 4s ease-in-out infinite;
 }
 
 .login-heading h2 {
   color: #4b254f;
-  font-size: 43px;
+  font-size: calc(43px * var(--dociq-text-scale, 1));
   line-height: 1.15;
   letter-spacing: -1.5px;
   font-weight: 850;
@@ -358,7 +358,7 @@
 .login-heading p {
   margin-top: 13px;
   color: #8d7d8b;
-  font-size: 15px;
+  font-size: calc(15px * var(--dociq-text-scale, 1));
   line-height: 1.6;
 }
 
@@ -378,7 +378,7 @@ form {
   display: block;
   margin-bottom: 9px;
   color: #4b254f;
-  font-size: 14px;
+  font-size: calc(14px * var(--dociq-text-scale, 1));
   font-weight: 700;
 }
 
@@ -393,7 +393,7 @@ form {
   left: 17px;
   z-index: 1;
   color: #a18d9f;
-  font-size: 17px;
+  font-size: calc(17px * var(--dociq-text-scale, 1));
   font-weight: 700;
   pointer-events: none;
 }
@@ -407,7 +407,7 @@ form {
   outline: none;
   background: #ffffff;
   color: #30243b;
-  font-size: 14px;
+  font-size: calc(14px * var(--dociq-text-scale, 1));
   transition:
     border-color 0.3s ease,
     box-shadow 0.3s ease,
@@ -440,7 +440,7 @@ form {
 .password-label-row a,
 .forgot-password {
   color: #d96f4e;
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
   font-weight: 700;
   transition: color 0.3s ease;
 }
@@ -457,7 +457,7 @@ form {
   border: none;
   background: transparent;
   color: #d96f4e;
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
   font-weight: 800;
   cursor: pointer;
   transition:
@@ -483,7 +483,7 @@ form {
   gap: 9px;
   margin: 0 !important;
   color: #8d7d8b !important;
-  font-size: 13px !important;
+  font-size: calc(13px * var(--dociq-text-scale, 1)) !important;
   font-weight: 500 !important;
   cursor: pointer;
 }
@@ -508,7 +508,7 @@ form {
   border-radius: 15px;
   background: #4b254f;
   color: #ffffff;
-  font-size: 15px;
+  font-size: calc(15px * var(--dociq-text-scale, 1));
   font-weight: 800;
   box-shadow: 0 12px 25px rgba(75, 37, 79, 0.18);
   transition:
@@ -518,7 +518,7 @@ form {
 }
 
 .login-submit-button span:last-child {
-  font-size: 20px;
+  font-size: calc(20px * var(--dociq-text-scale, 1));
   transition: transform 0.3s ease;
 }
 
@@ -555,7 +555,7 @@ form {
 
 .login-divider p {
   color: #b09eae;
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
   white-space: nowrap;
 }
 
@@ -572,7 +572,7 @@ form {
   border-radius: 15px;
   background: #ffffff;
   color: #4b254f;
-  font-size: 14px;
+  font-size: calc(14px * var(--dociq-text-scale, 1));
   font-weight: 800;
   transition:
     transform 0.3s ease,
@@ -589,7 +589,7 @@ form {
 }
 
 .google-icon {
-  font-size: 20px;
+  font-size: calc(20px * var(--dociq-text-scale, 1));
   font-weight: 900;
   color: #db4437;
 }
@@ -603,7 +603,7 @@ form {
   gap: 5px;
   margin-top: 32px;
   color: #8d7d8b;
-  font-size: 13px;
+  font-size: calc(13px * var(--dociq-text-scale, 1));
 }
 
 .signup-text a {
@@ -623,7 +623,7 @@ form {
   display: inline-flex;
   margin-top: 28px;
   color: #8d7d8b;
-  font-size: 13px;
+  font-size: calc(13px * var(--dociq-text-scale, 1));
   font-weight: 600;
   transition:
     color 0.3s ease,
@@ -751,7 +751,7 @@ form {
   }
 
   .login-message h1 {
-    font-size: 48px;
+    font-size: calc(48px * var(--dociq-text-scale, 1));
   }
 }
 
@@ -774,7 +774,7 @@ form {
   }
 
   .login-message h1 {
-    font-size: clamp(40px, 8vw, 58px);
+    font-size: calc(clamp(40px, 8vw, 58px) * var(--dociq-text-scale, 1));
   }
 
   .login-ai-card {
@@ -799,7 +799,7 @@ form {
   }
 
   .login-heading h2 {
-    font-size: 38px;
+    font-size: calc(38px * var(--dociq-text-scale, 1));
   }
 }
 
@@ -809,27 +809,27 @@ form {
   }
 
   .login-brand {
-    font-size: 24px;
+    font-size: calc(24px * var(--dociq-text-scale, 1));
   }
 
   .login-brand-icon {
     width: 42px;
     height: 42px;
-    font-size: 24px;
+    font-size: calc(24px * var(--dociq-text-scale, 1));
   }
 
   .login-small-badge {
-    font-size: 10px;
+    font-size: calc(10px * var(--dociq-text-scale, 1));
     letter-spacing: 1px;
   }
 
   .login-message h1 {
-    font-size: 40px;
+    font-size: calc(40px * var(--dociq-text-scale, 1));
     letter-spacing: -1.5px;
   }
 
   .login-message p {
-    font-size: 15px;
+    font-size: calc(15px * var(--dociq-text-scale, 1));
   }
 
   .login-ai-card {
@@ -846,7 +846,7 @@ form {
   }
 
   .login-heading h2 {
-    font-size: 34px;
+    font-size: calc(34px * var(--dociq-text-scale, 1));
   }
 
   .input-wrapper input {

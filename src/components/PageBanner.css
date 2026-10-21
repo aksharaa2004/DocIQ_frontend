@@ -1,0 +1,109 @@
+.dociq-page-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 23px 28px;
+  border: 1px solid #eadde0;
+  border-radius: 18px;
+  background: linear-gradient(125deg, #f8e9ed 0%, #fff2e8 52%, #f5e7f2 100%);
+}
+
+.dociq-page-banner-copy {
+  min-width: 0;
+}
+
+.dociq-page-banner-eyebrow {
+  display: block;
+  margin-bottom: 8px;
+  color: #9d617f;
+  font-size: calc(10px * var(--dociq-text-scale, 1));
+  font-weight: 800;
+  letter-spacing: 1.5px;
+}
+
+.dociq-page-banner-eyebrow::before {
+  content: "✦";
+  margin-right: 8px;
+  color: #f28c68;
+  font-size: calc(13px * var(--dociq-text-scale, 1));
+}
+
+.dociq-page-banner h1 {
+  margin: 0;
+  color: #30243b;
+  font-size: calc(28px * var(--dociq-text-scale, 1));
+  line-height: 1.2;
+  letter-spacing: -0.8px;
+}
+
+.dociq-page-banner p {
+  max-width: 660px;
+  margin: 8px 0 0;
+  color: #756878;
+  font-size: calc(13px * var(--dociq-text-scale, 1));
+  line-height: 1.6;
+}
+
+html[data-dociq-theme="dark"] .dociq-page-banner {
+  border-color: #493d4c;
+  background: linear-gradient(125deg, #352833 0%, #332b28 52%, #302832 100%);
+}
+
+html[data-dociq-theme="dark"] .dociq-page-banner h1 {
+  color: #f2ebf3;
+}
+
+html[data-dociq-theme="dark"] .dociq-page-banner p {
+  color: #c8bacb;
+}
+
+html[data-dociq-theme="dark"] .dociq-page-banner-eyebrow {
+  color: #d3a3bd;
+}
+
+@media (max-width: 700px) {
+  .dociq-page-banner {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px;
+  }
+
+  .assistant-page-heading .assistant-title-row {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+}
+
+@media (max-width: 420px) {
+  .dociq-page-banner {
+    padding: 18px;
+    border-radius: 15px;
+  }
+
+  .dociq-page-banner h1 {
+    font-size: calc(24px * var(--dociq-text-scale, 1));
+  }
+}
+
+
+
+/* Fix spacing around DocIQ page banner */
+.dociq-page-banner {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 28px 0;
+}
+
+/* Keep banner content inside its boundaries */
+.dociq-page-banner-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Ensure the next section has enough separation */
+.dociq-page-banner + * {
+  margin-top: 0;
+}

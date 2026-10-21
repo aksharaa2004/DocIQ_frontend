@@ -91,7 +91,7 @@ a {
   background: #4b254f;
   color: #ffb38a;
 
-  font-size: 23px;
+  font-size: calc(23px * var(--dociq-text-scale, 1));
   font-weight: bold;
 
   box-shadow: 0 8px 20px rgba(75, 37, 79, 0.18);
@@ -99,7 +99,7 @@ a {
 
 .brand-name {
   color: #4b254f;
-  font-size: 25px;
+  font-size: calc(25px * var(--dociq-text-scale, 1));
   font-weight: 800;
   letter-spacing: -1px;
 }
@@ -116,7 +116,7 @@ a {
 
   color: #756879;
 
-  font-size: 14px;
+  font-size: calc(14px * var(--dociq-text-scale, 1));
   font-weight: 600;
 
   transition: 0.3s ease;
@@ -162,7 +162,7 @@ a {
   background: #4b254f;
   color: white;
 
-  font-size: 14px;
+  font-size: calc(14px * var(--dociq-text-scale, 1));
   font-weight: 700;
 
   box-shadow: 0 8px 20px rgba(75, 37, 79, 0.18);
@@ -172,7 +172,7 @@ a {
 
 .nav-login-button span {
   color: #ffb38a;
-  font-size: 19px;
+  font-size: calc(19px * var(--dociq-text-scale, 1));
 }
 
 .nav-login-button:hover {
@@ -219,7 +219,7 @@ a {
   background: #fff0e8;
   color: #9c5d49;
 
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
   font-weight: 700;
 }
 
@@ -240,7 +240,7 @@ a {
 
   color: #4b254f;
 
-  font-size: clamp(43px, 5vw, 72px);
+  font-size: calc(clamp(43px, 5vw, 72px) * var(--dociq-text-scale, 1));
   line-height: 1.08;
 
   letter-spacing: -3px;
@@ -258,7 +258,7 @@ a {
 
   color: #776b7c;
 
-  font-size: 16px;
+  font-size: calc(16px * var(--dociq-text-scale, 1));
   line-height: 1.9;
 }
 
@@ -284,7 +284,7 @@ a {
 
   border-radius: 13px;
 
-  font-size: 14px;
+  font-size: calc(14px * var(--dociq-text-scale, 1));
   font-weight: 750;
 
   transition: 0.3s ease;
@@ -301,7 +301,7 @@ a {
 
 .primary-hero-button span {
   color: #ffb38a;
-  font-size: 20px;
+  font-size: calc(20px * var(--dociq-text-scale, 1));
 }
 
 .primary-hero-button:hover {
@@ -322,7 +322,7 @@ a {
 
 .secondary-hero-button span {
   color: #e77c5b;
-  font-size: 18px;
+  font-size: calc(18px * var(--dociq-text-scale, 1));
 }
 
 .secondary-hero-button:hover {
@@ -366,7 +366,7 @@ a {
   background: #e9b5a1;
   color: #4b254f;
 
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
   font-weight: 800;
 }
 
@@ -391,12 +391,12 @@ a {
 
 .user-text strong {
   color: #4b254f;
-  font-size: 13px;
+  font-size: calc(13px * var(--dociq-text-scale, 1));
 }
 
 .user-text span {
   color: #938591;
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
 }
 
 
@@ -466,7 +466,7 @@ a {
 
   color: #4b254f;
 
-  font-size: 13px;
+  font-size: calc(13px * var(--dociq-text-scale, 1));
   font-weight: 800;
 }
 
@@ -491,7 +491,7 @@ a {
 
   color: #6d9270;
 
-  font-size: 10px;
+  font-size: calc(10px * var(--dociq-text-scale, 1));
   font-weight: 700;
 }
 
@@ -539,7 +539,7 @@ a {
   background: #f8d6c7;
   color: #9f5944;
 
-  font-size: 10px;
+  font-size: calc(10px * var(--dociq-text-scale, 1));
   font-weight: 900;
 }
 
@@ -553,17 +553,17 @@ a {
 
 .document-info strong {
   color: #4b254f;
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
 }
 
 .document-info small {
   color: #9b8997;
-  font-size: 10px;
+  font-size: calc(10px * var(--dociq-text-scale, 1));
 }
 
 .more-icon {
   color: #a895a3;
-  font-size: 20px;
+  font-size: calc(20px * var(--dociq-text-scale, 1));
 }
 
 .document-lines {
@@ -614,7 +614,7 @@ a {
 
   color: #4b254f;
 
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
   font-weight: 800;
 }
 
@@ -656,7 +656,7 @@ a {
 
   border-radius: 10px;
 
-  font-size: 16px;
+  font-size: calc(16px * var(--dociq-text-scale, 1));
   font-weight: 800;
 }
 
@@ -685,17 +685,17 @@ a {
 
 .action-content strong {
   color: #4b254f;
-  font-size: 11px;
+  font-size: calc(11px * var(--dociq-text-scale, 1));
 }
 
 .action-content span {
   color: #a08e9b;
-  font-size: 10px;
+  font-size: calc(10px * var(--dociq-text-scale, 1));
 }
 
 .action-arrow {
   color: #e77c5b;
-  font-size: 16px;
+  font-size: calc(16px * var(--dociq-text-scale, 1));
 }
 
 
@@ -738,12 +738,12 @@ a {
 
 .floating-file-info strong {
   color: #4b254f;
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
 }
 
 .floating-file-info small {
   color: #a08e9b;
-  font-size: 10px;
+  font-size: calc(10px * var(--dociq-text-scale, 1));
 }
 
 .pdf-icon {
@@ -801,12 +801,12 @@ a {
 
 .ai-floating-text strong {
   color: #4b254f;
-  font-size: 11px;
+  font-size: calc(11px * var(--dociq-text-scale, 1));
 }
 
 .ai-floating-text span {
   color: #a08e9b;
-  font-size: 10px;
+  font-size: calc(10px * var(--dociq-text-scale, 1));
 }
 
 
@@ -860,12 +860,12 @@ a {
 }
 
 .stat-text strong {
-  font-size: 11px;
+  font-size: calc(11px * var(--dociq-text-scale, 1));
 }
 
 .stat-text span {
   color: #d9c6d8;
-  font-size: 10px;
+  font-size: calc(10px * var(--dociq-text-scale, 1));
 }
 
 
@@ -915,7 +915,7 @@ a {
 
   color: #9b8997;
 
-  font-size: 13px;
+  font-size: calc(13px * var(--dociq-text-scale, 1));
 }
 
 .trust-items {
@@ -935,13 +935,13 @@ a {
 
   color: #756879;
 
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
   font-weight: 700;
 }
 
 .trust-items span {
   color: #e77c5b;
-  font-size: 17px;
+  font-size: calc(17px * var(--dociq-text-scale, 1));
 }
 
 
@@ -970,7 +970,7 @@ a {
 
   color: #d47758;
 
-  font-size: 11px;
+  font-size: calc(11px * var(--dociq-text-scale, 1));
   font-weight: 850;
 
   letter-spacing: 2px;
@@ -979,7 +979,7 @@ a {
 .section-heading h2 {
   color: #4b254f;
 
-  font-size: clamp(32px, 4vw, 50px);
+  font-size: calc(clamp(32px, 4vw, 50px) * var(--dociq-text-scale, 1));
 
   line-height: 1.15;
 
@@ -997,7 +997,7 @@ a {
 
   color: #8d7d8b;
 
-  font-size: 15px;
+  font-size: calc(15px * var(--dociq-text-scale, 1));
 
   line-height: 1.8;
 }
@@ -1052,7 +1052,7 @@ a {
 
   color: #d9c8d2;
 
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
   font-weight: 800;
 }
 
@@ -1068,7 +1068,7 @@ a {
 
   border-radius: 16px;
 
-  font-size: 23px;
+  font-size: calc(23px * var(--dociq-text-scale, 1));
   font-weight: 800;
 }
 
@@ -1097,7 +1097,7 @@ a {
 
   color: #4b254f;
 
-  font-size: 18px;
+  font-size: calc(18px * var(--dociq-text-scale, 1));
 }
 
 .feature-card p {
@@ -1105,7 +1105,7 @@ a {
 
   color: #8d7d8b;
 
-  font-size: 13px;
+  font-size: calc(13px * var(--dociq-text-scale, 1));
 
   line-height: 1.8;
 }
@@ -1117,7 +1117,7 @@ a {
 
   color: #d47758;
 
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
   font-weight: 800;
 }
 
@@ -1157,7 +1157,7 @@ a {
 
   color: #d9b4a5;
 
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
   font-weight: 850;
 
   letter-spacing: 2px;
@@ -1178,7 +1178,7 @@ a {
   background: #4b254f;
   color: #ffb38a;
 
-  font-size: 28px;
+  font-size: calc(28px * var(--dociq-text-scale, 1));
   font-weight: 800;
 }
 
@@ -1187,13 +1187,13 @@ a {
 
   color: #4b254f;
 
-  font-size: 18px;
+  font-size: calc(18px * var(--dociq-text-scale, 1));
 }
 
 .step p {
   color: #8d7d8b;
 
-  font-size: 13px;
+  font-size: calc(13px * var(--dociq-text-scale, 1));
 
   line-height: 1.8;
 }
@@ -1242,7 +1242,7 @@ a {
 .about-content h2 {
   color: white;
 
-  font-size: clamp(30px, 4vw, 48px);
+  font-size: calc(clamp(30px, 4vw, 48px) * var(--dociq-text-scale, 1));
 
   line-height: 1.15;
 
@@ -1258,7 +1258,7 @@ a {
 
   color: #d9c6d8;
 
-  font-size: 14px;
+  font-size: calc(14px * var(--dociq-text-scale, 1));
 
   line-height: 1.9;
 }
@@ -1286,13 +1286,13 @@ a {
 
   color: #ffb38a;
 
-  font-size: 55px;
+  font-size: calc(55px * var(--dociq-text-scale, 1));
 }
 
 .about-stat strong {
   color: white;
 
-  font-size: 20px;
+  font-size: calc(20px * var(--dociq-text-scale, 1));
 }
 
 .about-stat span {
@@ -1300,7 +1300,7 @@ a {
 
   color: #d9c6d8;
 
-  font-size: 13px;
+  font-size: calc(13px * var(--dociq-text-scale, 1));
 }
 
 
@@ -1337,13 +1337,13 @@ a {
   background: #fbe0d3;
   color: #d47758;
 
-  font-size: 30px;
+  font-size: calc(30px * var(--dociq-text-scale, 1));
 }
 
 .cta-content h2 {
   color: #4b254f;
 
-  font-size: clamp(32px, 4vw, 50px);
+  font-size: calc(clamp(32px, 4vw, 50px) * var(--dociq-text-scale, 1));
 
   line-height: 1.15;
 
@@ -1355,7 +1355,7 @@ a {
 
   color: #8d7d8b;
 
-  font-size: 15px;
+  font-size: calc(15px * var(--dociq-text-scale, 1));
 }
 
 .cta-button {
@@ -1371,7 +1371,7 @@ a {
   background: #4b254f;
   color: white;
 
-  font-size: 14px;
+  font-size: calc(14px * var(--dociq-text-scale, 1));
   font-weight: 800;
 
   box-shadow:
@@ -1382,7 +1382,7 @@ a {
 
 .cta-button span {
   color: #ffb38a;
-  font-size: 20px;
+  font-size: calc(20px * var(--dociq-text-scale, 1));
 }
 
 .cta-button:hover {
@@ -1421,7 +1421,7 @@ a {
 
   color: #c5b4c5;
 
-  font-size: 13px;
+  font-size: calc(13px * var(--dociq-text-scale, 1));
 
   line-height: 1.9;
 }
@@ -1448,13 +1448,13 @@ a {
 
   color: #ffb38a;
 
-  font-size: 13px;
+  font-size: calc(13px * var(--dociq-text-scale, 1));
 }
 
 .footer-links a {
   color: #c5b4c5;
 
-  font-size: 12px;
+  font-size: calc(12px * var(--dociq-text-scale, 1));
 
   transition: 0.3s ease;
 }
@@ -1476,7 +1476,7 @@ a {
 
   color: #a995aa;
 
-  font-size: 11px;
+  font-size: calc(11px * var(--dociq-text-scale, 1));
 }
 
 
@@ -1602,7 +1602,7 @@ a {
   }
 
   .brand-name {
-    font-size: 22px;
+    font-size: calc(22px * var(--dociq-text-scale, 1));
   }
 
   .nav-login-button {
@@ -1616,13 +1616,13 @@ a {
   }
 
   .hero-title {
-    font-size: 42px;
+    font-size: calc(42px * var(--dociq-text-scale, 1));
 
     letter-spacing: -1.5px;
   }
 
   .hero-description {
-    font-size: 14px;
+    font-size: calc(14px * var(--dociq-text-scale, 1));
   }
 
   .hero-buttons {
@@ -1710,7 +1710,7 @@ a {
 @media (max-width: 390px) {
 
   .hero-title {
-    font-size: 36px;
+    font-size: calc(36px * var(--dociq-text-scale, 1));
   }
 
   .hero-right {

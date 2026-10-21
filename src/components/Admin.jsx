@@ -11,7 +11,7 @@ const SECTIONS = [
   ["reports", "▥", "Reports"],
   ["settings", "⚙", "Settings"],
   ["security", "◈", "Security"],
-  ["help", "?", "Help"],
+  // ["help", "?", "Help"],
 ];
 
 /* =========================================================
@@ -1100,9 +1100,9 @@ function Admin() {
             )}
 
 
-            {section === "help" && (
+            {/* {section === "help" && (
               <HelpSection />
-            )}
+            )} */}
 
           </>
         )}

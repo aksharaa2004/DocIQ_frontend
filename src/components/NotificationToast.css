@@ -29,9 +29,9 @@
 }
 
 .dociq-notification-copy { flex: 1; min-width: 0; }
-.dociq-notification-copy strong { display: block; margin: 2px 0 4px; font-size: 15px; }
-.dociq-notification-copy p { color: #665968; font-size: 14px; line-height: 1.5; }
-.dociq-notification > button { border: 0; background: transparent; color: #766879; font-size: 22px; line-height: 1; }
+.dociq-notification-copy strong { display: block; margin: 2px 0 4px; font-size: calc(15px * var(--dociq-text-scale, 1)); }
+.dociq-notification-copy p { color: #665968; font-size: calc(14px * var(--dociq-text-scale, 1)); line-height: 1.5; }
+.dociq-notification > button { border: 0; background: transparent; color: #766879; font-size: calc(22px * var(--dociq-text-scale, 1)); line-height: 1; }
 
 html[data-dociq-theme="dark"] .dociq-notification {
   border-color: #493d4c;

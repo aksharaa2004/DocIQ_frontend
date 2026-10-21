@@ -28,6 +28,22 @@ function getSavedTheme() {
   }
 }
 
+function normalizeTextSize(value) {
+  return ["small", "normal", "large", "extra-large"].includes(value)
+    ? value
+    : "normal";
+}
+
+function getSavedTextSize() {
+  try {
+    return normalizeTextSize(
+      JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}").textSize
+    );
+  } catch {
+    return "normal";
+  }
+}
+
 function getCurrentPage() {
   const hash = window.location.hash.split("?")[0];
 
@@ -64,6 +80,7 @@ function replaceRoute(route) {
 function App() {
   const [page, setPage] = useState(getCurrentPage);
   const [theme, setTheme] = useState(getSavedTheme);
+  const [textSize, setTextSize] = useState(getSavedTextSize);
   const [systemDark, setSystemDark] = useState(
     () =>
       window.matchMedia?.("(prefers-color-scheme: dark)").matches || false,
@@ -229,6 +246,18 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    const syncTextSize = (event) => {
+      setTextSize(normalizeTextSize(event.detail));
+    };
+
+    window.addEventListener("dociq-text-size-change", syncTextSize);
+
+    return () => {
+      window.removeEventListener("dociq-text-size-change", syncTextSize);
+    };
+  }, []);
+
   // Global notification handling.
   useEffect(() => {
     const showNotification = (event) => {
@@ -288,7 +317,7 @@ function App() {
     : null;
 
   return (
-    <div className="dociq-app-root">
+    <div className="dociq-app-root" data-text-size={textSize}>
       {page === "home" && <Home />}
       {page === "login" && <Login />}
       {page === "signup" && <Signup />}
