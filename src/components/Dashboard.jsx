@@ -65,10 +65,12 @@ function Dashboard() {
   // Dynamic statistics
   const totalDocuments = recentFiles.length;
 
-  // Count saved/bookmarked documents
-  const savedBookmarks = recentFiles.filter(
-    (file) => file.bookmarked === true || file.isBookmarked === true
-  ).length;
+  // Count saved sections across documents. Older cached entries may only
+  // have the previous document-level boolean flags.
+  const savedBookmarks = recentFiles.reduce((total, file) => {
+    const bookmarks = Array.isArray(file.bookmarks) ? file.bookmarks : [];
+    return total + (bookmarks.length || (file.bookmarked || file.isBookmarked ? 1 : 0));
+  }, 0);
 
   // Total document storage
   const totalStorage = recentFiles.reduce(
@@ -618,7 +620,8 @@ function Dashboard() {
                     >
 
                       {(file.bookmarked === true ||
-                        file.isBookmarked === true) && (
+                        file.isBookmarked === true ||
+                        (Array.isArray(file.bookmarks) && file.bookmarks.length > 0)) && (
                         <span
                           title="Bookmarked"
                           style={{
