@@ -5,6 +5,24 @@ function Dashboard() {
   const userName = localStorage.getItem("userName") || "Student";
   const isAdmin = localStorage.getItem("userRole") === "admin";
   const recentDocumentsKey = `recentDocuments:${(localStorage.getItem("userEmail") || "").trim().toLowerCase() || "anonymous"}`;
+  const assistantHistoryKey = `dociq-assistant-history:${userName.toLowerCase()}`;
+
+  const getSavedSummaryCount = () => {
+    try {
+      const conversations = JSON.parse(localStorage.getItem(assistantHistoryKey) || "[]");
+      return conversations.reduce((total, conversation) => {
+        const messages = Array.isArray(conversation.messages) ? conversation.messages : [];
+        const count = messages.filter((message, index) =>
+          message.role === "user" &&
+          /\b(summarize|summarise|summary|summarization)\b/i.test(message.content || "") &&
+          messages.slice(index + 1).some((reply) => reply.role === "assistant")
+        ).length;
+        return total + count;
+      }, 0);
+    } catch {
+      return 0;
+    }
+  };
 
   // Read documents saved from your Upload page
   const [recentFiles, setRecentFiles] = useState(() => {
@@ -15,6 +33,7 @@ function Dashboard() {
     }
   });
   const [searchQuery, setSearchQuery] = useState("");
+  const [summaryCount, setSummaryCount] = useState(getSavedSummaryCount);
 
   const searchResults = searchQuery.trim()
     ? recentFiles.filter((file) =>
@@ -36,11 +55,15 @@ function Dashboard() {
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.message || "Unable to load documents.");
-        return Array.isArray(data.documents) ? data.documents : [];
+        return {
+          documents: Array.isArray(data.documents) ? data.documents : [],
+          summaryCount: Number(data.summaryCount) || 0,
+        };
       })
-      .then((documents) => {
+      .then(({ documents, summaryCount: loadedSummaryCount }) => {
         if (!active) return;
         setRecentFiles(documents);
+        setSummaryCount(Math.max(loadedSummaryCount, getSavedSummaryCount()));
         localStorage.setItem(recentDocumentsKey, JSON.stringify(documents.slice(0, 10)));
       })
       .catch(() => {});
@@ -400,7 +423,7 @@ function Dashboard() {
               </span>
 
               <h2>
-                0
+                {summaryCount}
               </h2>
 
               <p>
