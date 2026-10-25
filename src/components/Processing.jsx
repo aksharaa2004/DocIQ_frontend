@@ -1,23 +1,20 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { notifyDocIQ } from "../utils/notifications";
 import "./Processing.css";
 
 const API_BASE_URL = "http://localhost:5000";
 
 function Processing() {
-  const [status, setStatus] = useState("processing");
-  const [error, setError] = useState("");
-  const notifiedStatus = useRef(null);
-
   const documentId = useMemo(() => {
     const hash = window.location.hash || "";
-
-    const parts = hash
-      .replace("#", "")
-      .split("/");
-
+    const parts = hash.replace("#", "").split("/");
     return parts.length > 1 ? parts[1] : null;
   }, []);
+  const [status, setStatus] = useState("processing");
+  const [error, setError] = useState(() =>
+    documentId ? "" : "Document ID is missing."
+  );
+  const notifiedStatus = useRef(null);
 
   const navigateTo = (path) => {
     window.location.hash = path;
@@ -25,7 +22,6 @@ function Processing() {
 
   useEffect(() => {
     if (!documentId) {
-      setError("Document ID is missing.");
       return;
     }
 

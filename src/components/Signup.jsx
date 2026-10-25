@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import "./Signup.css";
 
 function Signup() {
@@ -9,12 +9,15 @@ function Signup() {
   const [agreeTerms, setAgreeTerms] = useState(false);
 
   const [message, setMessage] = useState("");
+  const [isDuplicateEmail, setIsDuplicateEmail] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSignup = async (e) => {
     e.preventDefault();
+    if (isLoading) return;
 
     setMessage("");
+    setIsDuplicateEmail(false);
 
     if (password.length < 8) {
       setMessage("Password must contain at least 8 characters.");
@@ -56,6 +59,7 @@ function Signup() {
         }, 1500);
       } else {
         setMessage(data.message || "Signup failed.");
+        setIsDuplicateEmail(response.status === 409);
       }
     } catch (error) {
       console.error("Signup error:", error);
@@ -103,7 +107,11 @@ function Signup() {
                 type="text"
                 placeholder="Enter your full name"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setMessage("");
+                  setIsDuplicateEmail(false);
+                }}
                 required
               />
             </div>
@@ -121,7 +129,11 @@ function Signup() {
                 type="email"
                 placeholder="you@example.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setMessage("");
+                  setIsDuplicateEmail(false);
+                }}
                 required
               />
             </div>
@@ -139,7 +151,11 @@ function Signup() {
                 type={showPassword ? "text" : "password"}
                 placeholder="Create a password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setMessage("");
+                  setIsDuplicateEmail(false);
+                }}
                 minLength="8"
                 required
               />
@@ -177,6 +193,9 @@ function Signup() {
           {message && (
             <p className="signup-message" role="alert">
               {message}
+              {isDuplicateEmail && (
+                <> <a href="#login">Go to login</a></>
+              )}
             </p>
           )}
 

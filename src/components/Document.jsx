@@ -1,9 +1,13 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import "./Document.css";
 import "./PageBanner.css";
 
 const API_BASE_URL = "http://localhost:5000";
 const SETTINGS_KEY = "dociq.settings";
+
+function navigateTo(path) {
+  window.location.hash = path;
+}
 
 function getSavedDocumentView() {
   try {
@@ -44,10 +48,6 @@ function Documents() {
   /* =========================
      NAVIGATION
   ========================= */
-
-  const navigateTo = (path) => {
-    window.location.hash = path;
-  };
 
   /* =========================
      LOGOUT
@@ -231,73 +231,78 @@ function Documents() {
      FETCH DOCUMENTS
   ========================= */
 
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
+    const response = await fetch(
+      `${API_BASE_URL}/api/documents`,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+        },
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || "Unable to load documents."
+      );
+    }
+
+    const documentList = Array.isArray(data)
+      ? data
+      : Array.isArray(data.documents)
+        ? data.documents
+        : [];
+
+    /* MongoDB remains the source of truth; this is a compatibility cache. */
     try {
-      setLoading(true);
-      setError("");
-
-      const response = await fetch(
-        `${API_BASE_URL}/api/documents`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-          },
-        }
+      localStorage.setItem(
+        recentDocumentsKey,
+        JSON.stringify(documentList.slice(0, 10))
       );
+    } catch {
+      // Ignore localStorage errors.
+    }
 
-      const data =
-        await response.json();
+    return documentList;
+  }, [recentDocumentsKey]);
 
-      if (!response.ok) {
-        throw new Error(
-          data.message ||
-            "Unable to load documents."
-        );
-      }
+  const refreshDocuments = async () => {
+    setLoading(true);
+    setError("");
 
-      const documentList =
-        Array.isArray(data)
-          ? data
-          : Array.isArray(data.documents)
-          ? data.documents
-          : [];
-
-      setDocuments(documentList);
-
-      /*
-       * localStorage is only used as a
-       * compatibility/fallback cache.
-       *
-       * MongoDB remains the source of truth.
-       */
-      try {
-        localStorage.setItem(
-          recentDocumentsKey,
-          JSON.stringify(
-            documentList.slice(0, 10)
-          )
-        );
-      } catch {
-        // Ignore localStorage errors.
-      }
-    } catch (error) {
-      console.error(
-        "Fetch documents error:",
-        error
-      );
-
-      setError(
-        error.message ||
-          "Unable to load your documents."
-      );
+    try {
+      setDocuments(await fetchDocuments());
+    } catch (fetchError) {
+      console.error("Fetch documents error:", fetchError);
+      setError(fetchError.message || "Unable to load your documents.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchDocuments();
-  }, []);
+    let cancelled = false;
+
+    fetchDocuments()
+      .then((documentList) => {
+        if (!cancelled) setDocuments(documentList);
+      })
+      .catch((fetchError) => {
+        console.error("Fetch documents error:", fetchError);
+        if (!cancelled) {
+          setError(fetchError.message || "Unable to load your documents.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [fetchDocuments]);
 
   useEffect(() => {
     const applySavedSearch = () => {
@@ -865,7 +870,7 @@ function Documents() {
 
             <button
               type="button"
-              onClick={fetchDocuments}
+              onClick={refreshDocuments}
             >
               Retry
             </button>

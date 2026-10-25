@@ -708,6 +708,50 @@
   text-align: center;
 }
 
+.reader-original-preview-shell {
+  width: 100%;
+  min-height: 240px;
+  overflow: auto;
+}
+
+.reader-original-renderer {
+  width: 100%;
+  min-height: 240px;
+}
+
+.reader-original-pptx {
+  display: grid;
+  place-items: start center;
+  overflow: auto;
+}
+
+.reader-original-docx .docx-wrapper {
+  max-width: 100%;
+  overflow: auto;
+}
+
+.reader-original-docx .docx {
+  max-width: 100%;
+}
+
+.reader-original-slide-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.reader-original-image {
+  display: block;
+  max-width: 100%;
+  max-height: 82vh;
+  width: auto;
+  height: auto;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
 
 /* ======================================================
    NO PAGES

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import "./Admin.css";
 
 const API_BASE_URL = "http://localhost:5000";
@@ -78,6 +78,16 @@ async function adminFetch(path, options = {}) {
   }
 
   return data;
+}
+
+async function fetchAdminData() {
+  return Promise.all([
+    adminFetch("/api/admin/overview"),
+    adminFetch("/api/admin/users"),
+    adminFetch("/api/admin/documents"),
+    adminFetch("/api/admin/ai-usage"),
+    adminFetch("/api/admin/reports"),
+  ]);
 }
 
 
@@ -564,50 +574,34 @@ function Admin() {
      LOAD ADMIN DATA
      ===================================================== */
 
+  const applyAdminData = useCallback(([
+    summary,
+    userData,
+    documentData,
+    usageData,
+    reportData,
+  ]) => {
+    setOverview(summary);
+    setUsers(userData.users || []);
+    setDocuments(documentData.documents || []);
+    setUsage({
+      total: usageData.total || 0,
+      operations: usageData.operations || [],
+      daily: usageData.daily || [],
+    });
+    setReports({
+      users: reportData.users || [],
+      documents: reportData.documents || [],
+      aiUsage: reportData.aiUsage || [],
+    });
+  }, []);
+
   const loadAdminData = async () => {
     setLoading(true);
     setError("");
 
     try {
-      const [
-        summary,
-        userData,
-        documentData,
-        usageData,
-        reportData,
-      ] = await Promise.all([
-        adminFetch("/api/admin/overview"),
-        adminFetch("/api/admin/users"),
-        adminFetch("/api/admin/documents"),
-        adminFetch("/api/admin/ai-usage"),
-        adminFetch("/api/admin/reports"),
-      ]);
-
-      setOverview(summary);
-
-      setUsers(
-        userData.users || []
-      );
-
-      setDocuments(
-        documentData.documents || []
-      );
-
-      setUsage({
-        total: usageData.total || 0,
-        operations:
-          usageData.operations || [],
-        daily: usageData.daily || [],
-      });
-
-      setReports({
-        users: reportData.users || [],
-        documents:
-          reportData.documents || [],
-        aiUsage:
-          reportData.aiUsage || [],
-      });
-
+      applyAdminData(await fetchAdminData());
     } catch (loadError) {
       setError(loadError.message);
     } finally {
@@ -617,8 +611,23 @@ function Admin() {
 
 
   useEffect(() => {
-    loadAdminData();
-  }, []);
+    let cancelled = false;
+
+    fetchAdminData()
+      .then((data) => {
+        if (!cancelled) applyAdminData(data);
+      })
+      .catch((loadError) => {
+        if (!cancelled) setError(loadError.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [applyAdminData]);
 
 
   /* =====================================================
@@ -2435,97 +2444,6 @@ function SecuritySection() {
           </small>
 
         </p>
-
-      </div>
-
-    </section>
-  );
-}
-
-
-/* =========================================================
-   HELP
-   ========================================================= */
-
-function HelpSection() {
-  return (
-    <section className="admin-panel">
-
-      <div className="admin-panel-heading">
-
-        <div>
-
-          <h2>
-            Admin help
-          </h2>
-
-          <p>
-            Quick guidance for managing
-            DocIQ.
-          </p>
-
-        </div>
-
-      </div>
-
-
-      <div className="admin-help-grid">
-
-        <article>
-
-          <span>
-            01
-          </span>
-
-          <h3>
-            Manage user access
-          </h3>
-
-          <p>
-            Deactivate an account to block
-            future sign-ins. Reactivate it
-            to restore access.
-          </p>
-
-        </article>
-
-
-        <article>
-
-          <span>
-            02
-          </span>
-
-          <h3>
-            Review documents
-          </h3>
-
-          <p>
-            Legacy documents without a
-            linked account are labeled as
-            unassigned.
-          </p>
-
-        </article>
-
-
-        <article>
-
-          <span>
-            03
-          </span>
-
-          <h3>
-            AI usage records
-          </h3>
-
-          <p>
-            Usage counts include successful
-            AI service requests recorded
-            after this module was enabled.
-          </p>
-
-        </article>
 
       </div>
 

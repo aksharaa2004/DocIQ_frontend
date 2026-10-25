@@ -1778,9 +1778,25 @@ html[data-dociq-theme="dark"] .admin-muted {
     margin: 0 4px 15px;
   }
 
-  .admin-nav-label,
-  .admin-sidebar-bottom {
+  .admin-nav-label {
     display: none;
+  }
+
+  .admin-sidebar-bottom {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
+
+  .admin-profile {
+    display: none;
+  }
+
+  .admin-logout {
+    width: auto;
+    min-height: 34px;
+    padding: 0 10px;
+    font-size: calc(11px * var(--dociq-text-scale, 1));
   }
 
   .admin-sidebar nav {

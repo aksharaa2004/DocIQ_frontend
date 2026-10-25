@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import "./Login.css";
 
 function Login() {
@@ -6,7 +6,13 @@ function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(() => {
+    const query = window.location.hash.split("?")[1] || "";
+    const params = new URLSearchParams(query);
+    return params.get("error") === "google_failed"
+      ? "Google sign-in failed. Please try again."
+      : "";
+  });
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -14,7 +20,6 @@ function Login() {
     const params = new URLSearchParams(query);
 
     if (params.get("error") === "google_failed") {
-      setMessage("Google sign-in failed. Please try again.");
       window.history.replaceState(
         window.history.state,
         "",
@@ -25,6 +30,7 @@ function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    if (isLoading) return;
 
     setMessage("");
 
@@ -227,7 +233,10 @@ function Login() {
                   type="email"
                   placeholder="you@example.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setMessage("");
+                  }}
                   required
                 />
 
@@ -262,7 +271,10 @@ function Login() {
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setMessage("");
+                  }}
                   required
                 />
 

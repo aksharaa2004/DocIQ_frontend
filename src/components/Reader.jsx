@@ -57,9 +57,11 @@ function Reader({ documentId }) {
 
   const [documentData, setDocumentData] = useState(null);
   const [showOriginalPdf, setShowOriginalPdf] = useState(false);
-  const [originalPdfBlobUrl, setOriginalPdfBlobUrl] = useState("");
-  const [originalPdfLoading, setOriginalPdfLoading] = useState(false);
-  const [originalPdfError, setOriginalPdfError] = useState("");
+  const [originalPdfResult, setOriginalPdfResult] = useState(null);
+  const [showOriginalPreview, setShowOriginalPreview] = useState(false);
+  const [originalPreview, setOriginalPreview] = useState(null);
+  const originalPreviewContainerRef = useRef(null);
+  const originalPreviewViewerRef = useRef(null);
   const [loading, setLoading] = useState(Boolean(documentId));
   const [error, setError] = useState(
     documentId ? "" : "No document was selected."
@@ -334,7 +336,25 @@ function Reader({ documentId }) {
       documentData?.fileType ||
         documentFileName.split(".").pop() || ""
     ).toLowerCase() === "pdf";
-  const originalPdfUrl = originalPdfBlobUrl;
+  const documentFileType = String(
+    documentData?.fileType || documentFileName.split(".").pop() || ""
+  ).toLowerCase();
+  const isPptxDocument = documentFileType === "pptx";
+  const isDocxDocument = documentFileType === "docx";
+  const isImageDocument = ["png", "jpg", "jpeg", "webp"].includes(documentFileType);
+  const supportsOriginalPreview = isPptxDocument || isDocxDocument || isImageDocument;
+  const currentOriginalPdfResult =
+    originalPdfResult?.documentId === documentId
+      ? originalPdfResult
+      : null;
+  const originalPdfUrl = currentOriginalPdfResult?.url || "";
+  const originalPdfLoading = Boolean(
+    showOriginalPdf && isPdfDocument && !currentOriginalPdfResult
+  );
+  const originalPdfError = currentOriginalPdfResult?.error || "";
+  const currentOriginalPreview = originalPreview?.documentId === documentId
+    ? originalPreview
+    : null;
 
   // =========================================================
   // GET FILE TYPE
@@ -435,16 +455,11 @@ function Reader({ documentId }) {
 
   useEffect(() => {
     if (!documentId || !isPdfDocument || !showOriginalPdf) {
-      setOriginalPdfBlobUrl("");
-      setOriginalPdfError("");
       return undefined;
     }
 
     let cancelled = false;
     let createdUrl = "";
-    setOriginalPdfLoading(true);
-    setOriginalPdfError("");
-    setOriginalPdfBlobUrl("");
 
     fetch(`${API_BASE_URL}/api/documents/${documentId}/original`, {
       headers: {
@@ -461,13 +476,20 @@ function Reader({ documentId }) {
       .then((blob) => {
         if (cancelled) return;
         createdUrl = URL.createObjectURL(blob);
-        setOriginalPdfBlobUrl(createdUrl);
+        setOriginalPdfResult({
+          documentId,
+          url: createdUrl,
+          error: "",
+        });
       })
       .catch((error) => {
-        if (!cancelled) setOriginalPdfError(error.message);
-      })
-      .finally(() => {
-        if (!cancelled) setOriginalPdfLoading(false);
+        if (!cancelled) {
+          setOriginalPdfResult({
+            documentId,
+            url: "",
+            error: error.message,
+          });
+        }
       });
 
     return () => {
@@ -475,6 +497,118 @@ function Reader({ documentId }) {
       if (createdUrl) URL.revokeObjectURL(createdUrl);
     };
   }, [documentId, isPdfDocument, showOriginalPdf]);
+
+  useEffect(() => {
+    if (!documentId || !supportsOriginalPreview || !showOriginalPreview) {
+      return undefined;
+    }
+
+    let cancelled = false;
+    let createdUrl = "";
+    let pptxViewer = null;
+    const previewContainer = originalPreviewContainerRef.current;
+
+    const loadOriginalPreview = async () => {
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/documents/${documentId}/original-preview`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
+            },
+          }
+        );
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}));
+          throw new Error(data.message || "Could not load the original file.");
+        }
+
+        const fileBlob = await response.blob();
+        if (cancelled) return;
+
+        if (isImageDocument) {
+          createdUrl = URL.createObjectURL(fileBlob);
+          setOriginalPreview({ documentId, loading: false, error: "", url: createdUrl });
+          return;
+        }
+
+        if (!previewContainer) {
+          throw new Error("The original preview area is unavailable.");
+        }
+        previewContainer.replaceChildren();
+
+        if (isDocxDocument) {
+          const { renderAsync } = await import("docx-preview");
+          if (cancelled) return;
+          await renderAsync(fileBlob, previewContainer, previewContainer, {
+            useBase64URL: true,
+            renderHeaders: true,
+            renderFooters: true,
+            renderAltChunks: false,
+          });
+          if (!cancelled) {
+            setOriginalPreview({ documentId, loading: false, error: "" });
+          }
+          return;
+        }
+
+        const { PptxViewer, RECOMMENDED_ZIP_LIMITS } = await import(
+          "@aiden0z/pptx-renderer"
+        );
+        if (cancelled) return;
+        pptxViewer = await PptxViewer.open(
+          await fileBlob.arrayBuffer(),
+          previewContainer,
+          {
+            externalMedia: "block",
+            zipLimits: RECOMMENDED_ZIP_LIMITS,
+            renderMode: "slide",
+            onSlideChange: (index) => {
+              if (!cancelled) {
+                setOriginalPreview((current) =>
+                  current?.documentId === documentId
+                    ? { ...current, slideIndex: index }
+                    : current
+                );
+              }
+            },
+          }
+        );
+        if (cancelled) {
+          pptxViewer.destroy();
+          return;
+        }
+        originalPreviewViewerRef.current = pptxViewer;
+        setOriginalPreview({
+          documentId,
+          loading: false,
+          error: "",
+          slideIndex: pptxViewer.currentSlideIndex,
+          slideCount: pptxViewer.slideCount,
+        });
+      } catch (previewError) {
+        if (!cancelled) {
+          setOriginalPreview({
+            documentId,
+            loading: false,
+            error: previewError.message || "Could not render the original file.",
+          });
+        }
+      }
+    };
+
+    loadOriginalPreview();
+
+    return () => {
+      cancelled = true;
+      if (createdUrl) URL.revokeObjectURL(createdUrl);
+      pptxViewer?.destroy();
+      if (originalPreviewViewerRef.current === pptxViewer) {
+        originalPreviewViewerRef.current = null;
+      }
+      previewContainer?.replaceChildren();
+    };
+  }, [documentId, isDocxDocument, isImageDocument, isPptxDocument, showOriginalPreview, supportsOriginalPreview]);
 
   // =========================================================
   // LOAD TTS VOICES
@@ -3746,14 +3880,93 @@ function Reader({ documentId }) {
               <button
                 type="button"
                 className="reader-translate-button"
-                onClick={() => setShowOriginalPdf((show) => !show)}
+                onClick={() => {
+                  setOriginalPdfResult(null);
+                  setShowOriginalPdf((show) => !show);
+                }}
               >
                 {showOriginalPdf ? "Read extracted text" : "View original PDF layout"}
               </button>
             </div>
           )}
 
-          {isPdfDocument && showOriginalPdf ? (
+          {supportsOriginalPreview && (
+            <div className="reader-document-view-switch">
+              <button
+                type="button"
+                className="reader-translate-button"
+                onClick={() => {
+                  if (showOriginalPreview) {
+                    setOriginalPreview(null);
+                  } else {
+                    setOriginalPreview({ documentId, loading: true, error: "" });
+                  }
+                  setShowOriginalPreview((show) => !show);
+                }}
+              >
+                {showOriginalPreview ? "Read extracted text" : "View original layout"}
+              </button>
+            </div>
+          )}
+
+          {supportsOriginalPreview && showOriginalPreview ? (
+            <div className="reader-original-preview-shell">
+              {(!currentOriginalPreview || currentOriginalPreview.loading) && (
+                <div className="reader-original-pdf-message" role="status">
+                  Loading original file…
+                </div>
+              )}
+              {currentOriginalPreview?.error && (
+                <div className="reader-original-pdf-message" role="alert">
+                  {currentOriginalPreview.error}
+                </div>
+              )}
+              {isPptxDocument && currentOriginalPreview?.slideCount > 0 && (
+                <div className="reader-original-slide-navigation">
+                  <button
+                    type="button"
+                    className="reader-translate-button"
+                    disabled={currentOriginalPreview.slideIndex <= 0}
+                    onClick={() => {
+                      const index = currentOriginalPreview.slideIndex - 1;
+                      void originalPreviewViewerRef.current?.goToSlide(index);
+                      setOriginalPreview((current) => ({ ...current, slideIndex: index }));
+                    }}
+                  >
+                    Previous slide
+                  </button>
+                  <span>
+                    Slide {currentOriginalPreview.slideIndex + 1} of {currentOriginalPreview.slideCount}
+                  </span>
+                  <button
+                    type="button"
+                    className="reader-translate-button"
+                    disabled={currentOriginalPreview.slideIndex >= currentOriginalPreview.slideCount - 1}
+                    onClick={() => {
+                      const index = currentOriginalPreview.slideIndex + 1;
+                      void originalPreviewViewerRef.current?.goToSlide(index);
+                      setOriginalPreview((current) => ({ ...current, slideIndex: index }));
+                    }}
+                  >
+                    Next slide
+                  </button>
+                </div>
+              )}
+              {isImageDocument && currentOriginalPreview?.url && (
+                <img
+                  className="reader-original-image"
+                  src={currentOriginalPreview.url}
+                  alt={`Original ${documentTitle}`}
+                />
+              )}
+              {!isImageDocument && !currentOriginalPreview?.error && (
+                <div
+                  ref={originalPreviewContainerRef}
+                  className={`reader-original-renderer ${isDocxDocument ? "reader-original-docx" : "reader-original-pptx"}`}
+                />
+              )}
+            </div>
+          ) : isPdfDocument && showOriginalPdf ? (
             originalPdfUrl ? (
               <iframe
                 className="reader-original-pdf"

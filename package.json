@@ -10,7 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@aiden0z/pptx-renderer": "^1.4.0",
     "@ant-design/x": "^2.9.0",
+    "docx-preview": "^0.4.1",
     "dompurify": "^3.4.16",
     "marked": "^18.0.14",
     "react": "^19.2.8",
